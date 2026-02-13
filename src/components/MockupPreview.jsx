@@ -1,0 +1,325 @@
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { compositeImages, downloadCanvas, preloadImages, quickComposite } from '../utils/imageUtils'
+import DesignTransformOverlay from './DesignTransformOverlay'
+
+
+function MockupPreview({ mockup, designImage }) {
+    const canvasRef = useRef(null)
+    const navigate = useNavigate()
+    const [initialLoading, setInitialLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [transform, setTransform] = useState({ scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
+    const [designSelected, setDesignSelected] = useState(false)
+    const [hoveredFillBtn, setHoveredFillBtn] = useState(null)
+    const hasLoadedOnce = useRef(false)
+    const isDraggingRef = useRef(false)
+    const cachedImagesRef = useRef(null)
+    const renderTimerRef = useRef(null)
+
+    // Preload and cache images when mockup/design changes
+    useEffect(() => {
+        if (!mockup || !designImage) return
+        preloadImages(mockup.image, designImage)
+            .then(imgs => { cachedImagesRef.current = imgs })
+            .catch(() => { })
+    }, [mockup, designImage])
+
+    // Full-quality render — debounced via setTimeout to stay non-blocking
+    useEffect(() => {
+        if (!mockup || !designImage) return
+        if (isDraggingRef.current) return
+
+        // Cancel any pending render
+        if (renderTimerRef.current) {
+            clearTimeout(renderTimerRef.current)
+        }
+
+        if (!hasLoadedOnce.current) {
+            setInitialLoading(true)
+        }
+        setError(null)
+
+        // Defer the expensive warp so the browser can process pending events
+        renderTimerRef.current = setTimeout(async () => {
+            try {
+                const canvas = canvasRef.current
+                if (canvas) {
+                    await compositeImages(canvas, mockup.image, designImage, mockup.placement, transform, mockup.type !== 'tshirt')
+                }
+                hasLoadedOnce.current = true
+                setInitialLoading(false)
+            } catch (err) {
+                console.error('Failed to render preview:', err)
+                setError('Failed to render preview. Please try again.')
+                setInitialLoading(false)
+            }
+        }, 0)
+
+        return () => {
+            if (renderTimerRef.current) {
+                clearTimeout(renderTimerRef.current)
+            }
+        }
+    }, [mockup, designImage, transform])
+
+    // Handle live transform updates during drag & keyboard
+    const handleTransformChange = useCallback((newTransform) => {
+        setTransform(newTransform)
+
+        // Use instant GPU-accelerated preview for all interactions
+        if (cachedImagesRef.current && canvasRef.current) {
+            const { mockupImg, designImg } = cachedImagesRef.current
+            quickComposite(canvasRef.current, mockupImg, designImg, mockup.placement, newTransform, mockup.type !== 'tshirt')
+        }
+    }, [mockup])
+
+    const handleDraggingChange = useCallback((dragging) => {
+        isDraggingRef.current = dragging
+        if (!dragging) {
+            // Drag ended — trigger full quality re-render
+            setTransform(t => ({ ...t }))
+        }
+    }, [])
+
+    const handleDownload = () => {
+        if (canvasRef.current) {
+            downloadCanvas(canvasRef.current, `mockup-${mockup.name.toLowerCase().replace(/\s+/g, '-')}.jpg`)
+        }
+    }
+
+    const handleReset = useCallback(() => {
+        setTransform({ scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
+    }, [])
+
+    if (!designImage) {
+        return (
+            <div className="empty-state">
+                <div className="empty-state-icon">🎨</div>
+                <h3 className="empty-state-title">No Design Uploaded</h3>
+                <p className="empty-state-description">
+                    Please upload a design first before previewing mockups.
+                </p>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => navigate('/')}
+                >
+                    Upload Design
+                </button>
+            </div>
+        )
+    }
+
+    if (!mockup) {
+        return (
+            <div className="empty-state">
+                <div className="empty-state-icon">🔍</div>
+                <h3 className="empty-state-title">Mockup Not Found</h3>
+                <p className="empty-state-description">
+                    This mockup template doesn't exist or has been deleted.
+                </p>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => navigate('/gallery')}
+                >
+                    Back to Gallery
+                </button>
+            </div>
+        )
+    }
+
+    const isDefaultTransform = transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0 && transform.fillMode === 'fit'
+
+    const toggleFillMode = () => {
+        setTransform(t => ({ ...t, fillMode: t.fillMode === 'fit' ? 'fill' : 'fit' }))
+    }
+
+
+
+    return (
+        <div className="preview-layout fade-in">
+            {/* Left: Canvas preview */}
+            <div className="preview-canvas-side">
+                <div className="preview-canvas-wrapper">
+                    {initialLoading && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '300px'
+                        }}>
+                            <div className="loading-spinner"></div>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div style={{
+                            padding: 'var(--space-xl)',
+                            textAlign: 'center',
+                            color: 'var(--color-error)'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="preview-canvas-container">
+                        <canvas
+                            ref={canvasRef}
+                            className="preview-canvas"
+                            style={{
+                                display: initialLoading || error ? 'none' : 'block',
+                                ...(canvasRef.current?.width > 0 ? { aspectRatio: `${canvasRef.current.width} / ${canvasRef.current.height}` } : {})
+                            }}
+                        />
+                        {!initialLoading && !error && (
+                            <DesignTransformOverlay
+                                mockup={mockup}
+                                designImage={designImage}
+                                transform={transform}
+                                onTransformChange={handleTransformChange}
+                                canvasRef={canvasRef}
+                                selected={designSelected}
+                                onSelect={() => setDesignSelected(true)}
+                                onDeselect={() => setDesignSelected(false)}
+                                onDraggingChange={handleDraggingChange}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Right: Controls panel */}
+            <div className="preview-controls-panel">
+                <h3 style={{ marginBottom: 'var(--space-md)', fontSize: '1.1rem' }}>Controls</h3>
+
+                <div className="preview-control-group">
+                    <label className="preview-control-label">Aspect Ratio</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ flex: 1, position: 'relative' }}
+                            onMouseEnter={() => setHoveredFillBtn('fit')}
+                            onMouseLeave={() => setHoveredFillBtn(null)}
+                        >
+                            {hoveredFillBtn === 'fit' && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '100%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    marginBottom: '8px',
+                                    padding: '6px 10px',
+                                    background: 'rgba(0,0,0,0.85)',
+                                    color: 'white',
+                                    borderRadius: '4px',
+                                    fontSize: '0.75rem',
+                                    pointerEvents: 'none',
+                                    whiteSpace: 'nowrap',
+                                    zIndex: 10,
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                }}>
+                                    Keeps original aspect ratio
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: '50%',
+                                        marginLeft: '-5px',
+                                        borderWidth: '5px',
+                                        borderStyle: 'solid',
+                                        borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
+                                    }} />
+                                </div>
+                            )}
+                            <button
+                                className={`btn ${transform.fillMode === 'fit' ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => setTransform(t => ({ ...t, fillMode: 'fit' }))}
+                                style={{ width: '100%' }}
+                            >
+                                Fit
+                            </button>
+                        </div>
+
+                        <div style={{ flex: 1, position: 'relative' }}
+                            onMouseEnter={() => setHoveredFillBtn('fill')}
+                            onMouseLeave={() => setHoveredFillBtn(null)}
+                        >
+                            {hoveredFillBtn === 'fill' && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '100%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    marginBottom: '8px',
+                                    padding: '6px 10px',
+                                    background: 'rgba(0,0,0,0.85)',
+                                    color: 'white',
+                                    borderRadius: '4px',
+                                    fontSize: '0.75rem',
+                                    pointerEvents: 'none',
+                                    whiteSpace: 'nowrap',
+                                    zIndex: 10,
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                }}>
+                                    Stretches to fill area
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: '50%',
+                                        marginLeft: '-5px',
+                                        borderWidth: '5px',
+                                        borderStyle: 'solid',
+                                        borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
+                                    }} />
+                                </div>
+                            )}
+                            <button
+                                className={`btn ${transform.fillMode === 'fill' ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => setTransform(t => ({ ...t, fillMode: 'fill' }))}
+                                style={{ width: '100%' }}
+                            >
+                                Fill
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="preview-control-group">
+                    <button
+                        className="btn btn-secondary"
+                        onClick={handleReset}
+                        style={{ width: '100%' }}
+                        disabled={transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0 && transform.fillMode === 'fit'}
+                    >
+                        Reset Position
+                    </button>
+                </div>
+
+
+                <div style={{ flex: 1 }}></div>
+
+                <div className="preview-control-group" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-lg)' }}>
+                    <button
+                        className="btn btn-primary"
+                        onClick={handleDownload}
+                        disabled={initialLoading || error}
+                        style={{ width: '100%' }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => navigate('/gallery')}
+                        style={{ width: '100%' }}
+                    >
+                        ← Different Mockup
+                    </button>
+                </div>
+            </div>
+        </div >
+    )
+}
+
+export default MockupPreview
