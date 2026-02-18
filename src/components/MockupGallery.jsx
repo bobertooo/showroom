@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useMockups } from '../hooks/useMockups'
 
-function MockupGallery() {
+function MockupGallery({ filter }) {
     const { mockups, loading } = useMockups()
     const navigate = useNavigate()
 
@@ -32,15 +32,31 @@ function MockupGallery() {
         )
     }
 
+    const filtered = filter && filter !== 'all'
+        ? mockups.filter(m => m.type === filter)
+        : mockups
+
+    if (filtered.length === 0) {
+        return (
+            <div className="empty-state">
+                <div className="empty-state-icon">🔍</div>
+                <h3 className="empty-state-title">No Mockups Found</h3>
+                <p className="empty-state-description">
+                    No mockups match this category. Try a different filter.
+                </p>
+            </div>
+        )
+    }
+
     return (
         <div className="gallery-grid fade-in">
-            {mockups.map((mockup) => (
+            {filtered.map((mockup) => (
                 <div
                     key={mockup.id}
                     className="card card-clickable gallery-item"
                     onClick={() => navigate(`/preview/${mockup.id}`)}
                 >
-                    <img src={mockup.image} alt="Mockup Template" />
+                    <img src={mockup.image} alt={mockup.name || 'Mockup Template'} />
                 </div>
             ))}
         </div>

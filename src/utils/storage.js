@@ -1,83 +1,56 @@
-// IndexedDB storage for mockup templates
+// Server-backed storage for mockup templates
+// All data persists to the server filesystem via Express API
 
-const DB_NAME = 'MockupStudioDB'
-const DB_VERSION = 1
-const STORE_NAME = 'mockups'
-
-let dbPromise = null
-
-function getDB() {
-    if (dbPromise) return dbPromise
-
-    dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION)
-
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => resolve(request.result)
-
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' })
-            }
-        }
-    })
-
-    return dbPromise
-}
+const API_OPTS = { credentials: 'include' }
 
 export async function getAllMockups() {
-    const db = await getDB()
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readonly')
-        const store = transaction.objectStore(STORE_NAME)
-        const request = store.getAll()
-
-        request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error)
-    })
+    const response = await fetch('/api/mockups', API_OPTS)
+    if (response.status === 429) {
+        throw new Error('Rate limited — please wait a moment and try again')
+    }
+    if (!response.ok) throw new Error('Failed to fetch mockups')
+    return response.json()
 }
 
 export async function getMockupById(id) {
-    const db = await getDB()
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readonly')
-        const store = transaction.objectStore(STORE_NAME)
-        const request = store.get(id)
-
-        request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error)
-    })
+    const mockups = await getAllMockups()
+    return mockups.find(m => m.id === id) || null
 }
 
 export async function saveMockup(mockup) {
-    const db = await getDB()
-    const mockupWithId = {
-        ...mockup,
-        id: mockup.id || `mockup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: mockup.createdAt || new Date().toISOString()
+    const isUpdate = !!mockup.id
+    const existingMockups = isUpdate ? await getAllMockups() : []
+    const exists = isUpdate && existingMockups.some(m => m.id === mockup.id)
+
+    if (exists) {
+        // Update existing mockup
+        const response = await fetch(`/api/mockups/${mockup.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(mockup)
+        })
+        if (!response.ok) throw new Error('Failed to update mockup')
+        return response.json()
+    } else {
+        // Create new mockup
+        const response = await fetch('/api/mockups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(mockup)
+        })
+        if (!response.ok) throw new Error('Failed to create mockup')
+        return response.json()
     }
-
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite')
-        const store = transaction.objectStore(STORE_NAME)
-        const request = store.put(mockupWithId)
-
-        request.onsuccess = () => resolve(mockupWithId)
-        request.onerror = () => reject(request.error)
-    })
 }
 
 export async function deleteMockup(id) {
-    const db = await getDB()
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite')
-        const store = transaction.objectStore(STORE_NAME)
-        const request = store.delete(id)
-
-        request.onsuccess = () => resolve()
-        request.onerror = () => reject(request.error)
+    const response = await fetch(`/api/mockups/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
     })
+    if (!response.ok) throw new Error('Failed to delete mockup')
 }
 
 // Session storage for the current design
@@ -106,13 +79,16 @@ export function getCurrentDesign() {
 // ===== Export / Import =====
 
 export async function exportAllMockups() {
-    const mockups = await getAllMockups()
-    const payload = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        mockups
-    }
-    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    // First get the count from regular endpoint
+    const countResponse = await fetch('/api/mockups', API_OPTS)
+    const allMockups = await countResponse.json()
+    const count = allMockups.length
+
+    // Then trigger the export download
+    const response = await fetch('/api/mockups/export', API_OPTS)
+    if (!response.ok) throw new Error('Failed to export mockups')
+
+    const blob = await response.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -121,7 +97,8 @@ export async function exportAllMockups() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    return mockups.length
+
+    return count
 }
 
 export function importMockups(file) {
@@ -130,18 +107,17 @@ export function importMockups(file) {
         reader.onload = async (e) => {
             try {
                 const data = JSON.parse(e.target.result)
-                const mockups = data.mockups || data // support raw array or wrapped object
-                if (!Array.isArray(mockups)) {
-                    throw new Error('Invalid backup file: expected an array of mockups')
-                }
-                let count = 0
-                for (const mockup of mockups) {
-                    if (mockup.image && mockup.placement) {
-                        await saveMockup(mockup)
-                        count++
-                    }
-                }
-                resolve(count)
+
+                const response = await fetch('/api/mockups/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                })
+
+                if (!response.ok) throw new Error('Server import failed')
+                const result = await response.json()
+                resolve(result.imported)
             } catch (err) {
                 reject(err)
             }

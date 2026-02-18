@@ -120,8 +120,86 @@ export class Perspective {
         const srcData = srcCtx.getImageData(0, 0, width, height).data;
 
         let dstData = null;
-        if (blendMode === 'multiply') {
+        if (blendMode === 'multiply' || blendMode === 'clothing') {
             dstData = this.ctx.getImageData(0, 0, canvasW, canvasH).data;
+        }
+
+        // For clothing mode: pre-compute average luminance in the placement region
+        // so we can determine if the fabric is dark or light overall
+        let avgLum = 0.5;
+        let lumMap = null;
+        if (blendMode === 'clothing' && dstData) {
+            // Build a luminance map and compute average
+            const regionW = maxX - minX;
+            const regionH = maxY - minY;
+            lumMap = new Float32Array(regionW * regionH);
+            let lumSum = 0;
+            let lumCount = 0;
+            for (let y = minY; y < maxY; y++) {
+                for (let x = minX; x < maxX; x++) {
+                    const di = (y * canvasW + x) * 4;
+                    const lum = (dstData[di] * 0.299 + dstData[di + 1] * 0.587 + dstData[di + 2] * 0.114) / 255;
+                    lumMap[(y - minY) * regionW + (x - minX)] = lum;
+                    lumSum += lum;
+                    lumCount++;
+                }
+            }
+            avgLum = lumCount > 0 ? lumSum / lumCount : 0.5;
+
+            // Compute local luminance variation for fold shading
+            // Apply a simple box blur to get the "smooth" luminance, then
+            // the fold detail = actual lum - smooth lum
+            const blurRadius = Math.max(2, Math.round(Math.min(regionW, regionH) * 0.015));
+            const smoothLum = new Float32Array(regionW * regionH);
+
+            // Horizontal pass
+            const tempBlur = new Float32Array(regionW * regionH);
+            for (let y = 0; y < regionH; y++) {
+                let runSum = 0;
+                let runCount = 0;
+                // Initialize window
+                for (let x = 0; x < Math.min(blurRadius, regionW); x++) {
+                    runSum += lumMap[y * regionW + x];
+                    runCount++;
+                }
+                for (let x = 0; x < regionW; x++) {
+                    if (x + blurRadius < regionW) {
+                        runSum += lumMap[y * regionW + x + blurRadius];
+                        runCount++;
+                    }
+                    if (x - blurRadius - 1 >= 0) {
+                        runSum -= lumMap[y * regionW + x - blurRadius - 1];
+                        runCount--;
+                    }
+                    tempBlur[y * regionW + x] = runSum / runCount;
+                }
+            }
+            // Vertical pass
+            for (let x = 0; x < regionW; x++) {
+                let runSum = 0;
+                let runCount = 0;
+                for (let y = 0; y < Math.min(blurRadius, regionH); y++) {
+                    runSum += tempBlur[y * regionW + x];
+                    runCount++;
+                }
+                for (let y = 0; y < regionH; y++) {
+                    if (y + blurRadius < regionH) {
+                        runSum += tempBlur[(y + blurRadius) * regionW + x];
+                        runCount++;
+                    }
+                    if (y - blurRadius - 1 >= 0) {
+                        runSum -= tempBlur[(y - blurRadius - 1) * regionW + x];
+                        runCount--;
+                    }
+                    smoothLum[y * regionW + x] = runSum / runCount;
+                }
+            }
+
+            // Replace lumMap with fold detail: deviation from smooth surface
+            for (let i = 0; i < lumMap.length; i++) {
+                // foldDetail: positive = highlight/ridge, negative = shadow/fold
+                lumMap[i] = lumMap[i] - smoothLum[i];
+            }
         }
 
         // Iterate over clamped destination bounding box only
@@ -154,31 +232,86 @@ export class Perspective {
                     const w01 = (1 - fx) * fy;
                     const w11 = fx * fy;
 
-                    const sr = srcData[idx00] * w00 + srcData[idx10] * w10 + srcData[idx01] * w01 + srcData[idx11] * w11;
-                    const sg = srcData[idx00 + 1] * w00 + srcData[idx10 + 1] * w10 + srcData[idx01 + 1] * w01 + srcData[idx11 + 1] * w11;
-                    const sb = srcData[idx00 + 2] * w00 + srcData[idx10 + 2] * w10 + srcData[idx01 + 2] * w01 + srcData[idx11 + 2] * w11;
+                    let sr = srcData[idx00] * w00 + srcData[idx10] * w10 + srcData[idx01] * w01 + srcData[idx11] * w11;
+                    let sg = srcData[idx00 + 1] * w00 + srcData[idx10 + 1] * w10 + srcData[idx01 + 1] * w01 + srcData[idx11 + 1] * w11;
+                    let sb = srcData[idx00 + 2] * w00 + srcData[idx10 + 2] * w10 + srcData[idx01 + 2] * w01 + srcData[idx11 + 2] * w11;
                     const sa = srcData[idx00 + 3] * w00 + srcData[idx10 + 3] * w10 + srcData[idx01 + 3] * w01 + srcData[idx11 + 3] * w11;
 
                     const dstIdx = (y * canvasW + x) * 4;
 
-                    if (blendMode === 'multiply' && dstData) {
+                    if (blendMode === 'clothing' && dstData) {
+                        const dr = dstData[dstIdx];
+                        const dg = dstData[dstIdx + 1];
+                        const db = dstData[dstIdx + 2];
+
+                        // Per-pixel luminance of the mockup at this point
+                        const pixLum = (dr * 0.299 + dg * 0.587 + db * 0.114) / 255;
+
+                        // Apply fold shading from the luminance variation map
+                        // This makes the design follow the fabric's folds and wrinkles
+                        const regionW = maxX - minX;
+                        const foldIdx = (y - minY) * regionW + (x - minX);
+                        const foldDetail = lumMap ? lumMap[foldIdx] : 0;
+
+                        // Fold shading: amplify the detail and apply as brightness modulation
+                        // Positive = ridge (brighten), negative = fold (darken)
+                        const foldStrength = 1.8; // How strongly folds affect the design
+                        const foldFactor = 1.0 + foldDetail * foldStrength;
+
+                        // Apply fold modulation to the design
+                        sr = Math.max(0, Math.min(255, sr * foldFactor));
+                        sg = Math.max(0, Math.min(255, sg * foldFactor));
+                        sb = Math.max(0, Math.min(255, sb * foldFactor));
+
+                        // Adaptive blend: screen on dark, multiply on light
+                        // Screen: 255 - (255-a)(255-b)/255 — makes design visible on dark surfaces
+                        // Multiply: a*b/255 — natural shadow on light surfaces
+                        const screenR = 255 - ((255 - sr) * (255 - dr)) / 255;
+                        const screenG = 255 - ((255 - sg) * (255 - dg)) / 255;
+                        const screenB = 255 - ((255 - sb) * (255 - db)) / 255;
+
+                        const multiR = (sr * dr) / 255;
+                        const multiG = (sg * dg) / 255;
+                        const multiB = (sb * db) / 255;
+
+                        // Smooth transition based on average surface brightness
+                        // Dark fabric (avgLum < 0.3): mostly screen
+                        // Light fabric (avgLum > 0.6): mostly multiply
+                        // Medium: smooth blend between the two
+                        const t = Math.max(0, Math.min(1, (avgLum - 0.2) / 0.5));
+
+                        // Interpolate between screen and multiply
+                        let finalR = screenR * (1 - t) + multiR * t;
+                        let finalG = screenG * (1 - t) + multiG * t;
+                        let finalB = screenB * (1 - t) + multiB * t;
+
+                        // Subtle shadow preservation: darken slightly in shadow areas
+                        // even in screen mode, to maintain realism
+                        const shadowDim = 0.85 + 0.15 * pixLum; // 0.85 in pure shadow, 1.0 in highlights
+                        finalR *= shadowDim;
+                        finalG *= shadowDim;
+                        finalB *= shadowDim;
+
+                        data[dstIdx] = Math.max(0, Math.min(255, finalR));
+                        data[dstIdx + 1] = Math.max(0, Math.min(255, finalG));
+                        data[dstIdx + 2] = Math.max(0, Math.min(255, finalB));
+                        data[dstIdx + 3] = sa;
+
+                    } else if (blendMode === 'multiply' && dstData) {
                         const dr = dstData[dstIdx];
                         const dg = dstData[dstIdx + 1];
                         const db = dstData[dstIdx + 2];
 
                         // Blend: use multiply, but ensure shadows are always preserved.
-                        // On dark mockup areas, the design should be darkened to match.
                         const mr = (sr * dr) / 255;
                         const mg = (sg * dg) / 255;
                         const mb = (sb * db) / 255;
 
                         // Luminance-adaptive: on mid/light surfaces use full multiply,
                         // on dark surfaces (shadows) lerp toward just darkening the design
-                        // by the mockup brightness, so shadows stay dark but colors aren't crushed.
                         const lum = (dr * 0.299 + dg * 0.587 + db * 0.114) / 255;
                         const mix = Math.min(1, lum * lum * 4);
 
-                        // "Shadow only" pass: darken the design by the mockup brightness
                         const shadowR = sr * lum;
                         const shadowG = sg * lum;
                         const shadowB = sb * lum;

@@ -1,23 +1,42 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { getDesignBounds } from '../utils/imageUtils'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { getDesignBounds, getDesignBoundsSync, preloadImages } from '../utils/imageUtils'
 
 function DesignTransformOverlay({ mockup, designImage, transform, onTransformChange, canvasRef, selected, onSelect, onDeselect, onDraggingChange, onBackgroundClick }) {
     const overlayRef = useRef(null)
-    const [bounds, setBounds] = useState(null)
+    const [imageDims, setImageDims] = useState(null) // { mockupW, mockupH, designW, designH }
     const [dragging, setDragging] = useState(null) // null | 'move' | 'resize'
     const dragStart = useRef(null)
 
-    // Compute the design bounds whenever committed transform changes
+    // Preload images once and cache their dimensions (runs only when mockup/design change)
     useEffect(() => {
         if (!mockup || !designImage) return
         let cancelled = false
 
-        getDesignBounds(mockup.image, designImage, mockup.placement, transform)
-            .then(b => { if (!cancelled) setBounds(b) })
+        preloadImages(mockup.image, designImage)
+            .then(({ mockupImg, designImg }) => {
+                if (!cancelled) {
+                    setImageDims({
+                        mockupW: mockupImg.naturalWidth || mockupImg.width,
+                        mockupH: mockupImg.naturalHeight || mockupImg.height,
+                        designW: designImg.naturalWidth || designImg.width,
+                        designH: designImg.naturalHeight || designImg.height
+                    })
+                }
+            })
             .catch(() => { })
 
         return () => { cancelled = true }
-    }, [mockup, designImage, transform])
+    }, [mockup, designImage])
+
+    // Compute bounds synchronously from cached dimensions — no async, no image reloads
+    const bounds = useMemo(() => {
+        if (!imageDims || !mockup) return null
+        return getDesignBoundsSync(
+            imageDims.mockupW, imageDims.mockupH,
+            imageDims.designW, imageDims.designH,
+            mockup.placement, transform
+        )
+    }, [imageDims, mockup, transform])
 
     // Convert a display pixel delta to mockup percentage
     const displayDeltaToPercent = useCallback((dx, dy) => {

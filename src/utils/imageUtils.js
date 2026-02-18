@@ -180,11 +180,10 @@ export async function preloadImages(mockupSrc, designSrc) {
     return result
 }
 
-export async function compositeImages(canvas, mockupSrc, designSrc, placement, transform = {}, clipToPlacement = true) {
+export async function compositeImages(canvas, mockupSrc, designSrc, placement, transform = {}, clipToPlacement = true, productType = 'wall-art') {
     const { mockupImg, designImg } = await preloadImages(mockupSrc, designSrc)
 
     // Enforce a minimum render resolution to prevent pixelation on low-res mockups
-    // (e.g. if mockup is 600px, but design is HQ, we want to render at HQ)
     const minRes = 2400
     const scale = Math.max(1, minRes / Math.max(mockupImg.width, mockupImg.height))
 
@@ -204,8 +203,11 @@ export async function compositeImages(canvas, mockupSrc, designSrc, placement, t
         applyClipPath(ctx, clipPoly)
     }
 
+    // Choose blend mode based on product type
+    const blendMode = (productType === 'clothing' || productType === 'accessories') ? 'clothing' : 'multiply';
+
     const p = new Perspective(ctx, designImg);
-    p.warp(dstPoints, 'multiply');
+    p.warp(dstPoints, blendMode);
 
     if (clipToPlacement) {
         ctx.restore()
@@ -215,7 +217,7 @@ export async function compositeImages(canvas, mockupSrc, designSrc, placement, t
 }
 
 // GPU-accelerated quick composite for drag previews — no pixel-by-pixel warp
-export function quickComposite(canvas, mockupImg, designImg, placement, transform = {}, clipToPlacement = true) {
+export function quickComposite(canvas, mockupImg, designImg, placement, transform = {}, clipToPlacement = true, productType = 'wall-art') {
     // Use the canvas's existing dimensions — don't resize (avoids shrink + buffer reallocation)
     const w = canvas.width
     const h = canvas.height
@@ -235,14 +237,16 @@ export function quickComposite(canvas, mockupImg, designImg, placement, transfor
     const maxX = Math.max(...xs)
     const maxY = Math.max(...ys)
 
-    // Clip to placement zone (optional), then draw with native multiply blend
+    // Clip to placement zone (optional), then draw with appropriate blend
     if (clipToPlacement) {
         const clipPoly = getPlacementPolygon(placement, w, h)
         ctx.save()
         applyClipPath(ctx, clipPoly)
     }
 
-    ctx.globalCompositeOperation = 'multiply'
+    // Use screen for clothing (better visibility on dark), multiply for wall art
+    const isClothing = productType === 'clothing' || productType === 'accessories';
+    ctx.globalCompositeOperation = isClothing ? 'screen' : 'multiply'
     ctx.drawImage(designImg, minX, minY, maxX - minX, maxY - minY)
     ctx.globalCompositeOperation = 'source-over'
 
@@ -276,6 +280,26 @@ export async function getDesignBounds(mockupSrc, designSrc, placement, transform
         height: Math.max(...ys) - minY,
         mockupWidth: mockupImg.width,
         mockupHeight: mockupImg.height
+    };
+}
+
+// Synchronous version — uses pre-loaded image dimensions to avoid async overhead during drag
+export function getDesignBoundsSync(mockupW, mockupH, designW, designH, placement, transform = {}) {
+    const designAspect = designW / designH;
+    const pts = computeDesignPoints(placement, designAspect, mockupW, mockupH, transform);
+
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+
+    return {
+        x: minX,
+        y: minY,
+        width: Math.max(...xs) - minX,
+        height: Math.max(...ys) - minY,
+        mockupWidth: mockupW,
+        mockupHeight: mockupH
     };
 }
 

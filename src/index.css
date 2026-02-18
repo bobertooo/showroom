@@ -327,6 +327,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   font-size: 2rem;
+  color: white;
 }
 
 .upload-zone-title {
@@ -966,7 +967,7 @@ a:hover {
 .feature-card h3 {
   font-size: 1.25rem;
   margin-bottom: var(--space-sm);
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .feature-card p {
@@ -1033,15 +1034,13 @@ a:hover {
 
 .carousel-track {
   display: flex;
-  gap: var(--space-lg);
+  /* Use margin on items instead of gap for smoother loop calculation */
   width: max-content;
   animation: scroll 40s linear infinite;
   padding: var(--space-md) 0;
 }
 
-.carousel-track:hover {
-  animation-play-state: paused;
-}
+
 
 @keyframes scroll {
   0% {
@@ -1049,8 +1048,8 @@ a:hover {
   }
 
   100% {
-    transform: translateX(-50%);
-    /* Assumes duplicated content */
+    transform: translateX(-33.33333%);
+    /* Move by exactly 1/3 (one full set) */
   }
 }
 
@@ -1064,13 +1063,11 @@ a:hover {
   box-shadow: var(--shadow-md);
   transition: transform var(--transition-base), box-shadow var(--transition-base);
   background: var(--color-bg-card);
+  margin-right: var(--space-lg);
+  /* Gap replacement */
 }
 
-.carousel-item:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: var(--shadow-lg);
-  z-index: 10;
-}
+
 
 .carousel-item img {
   width: 100%;
@@ -1095,35 +1092,4 @@ a:hover {
   font-size: 2rem;
   margin-bottom: var(--space-sm);
   opacity: 0.5;
-}
-
-.carousel-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  text-decoration: none;
-}
-
-.carousel-item:hover .carousel-overlay {
-  opacity: 1;
-}
-
-.carousel-overlay span {
-  background: white;
-  color: black;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-full);
-  font-weight: 600;
-  font-size: 0.85rem;
-  transform: translateY(10px);
-  transition: transform var(--transition-fast);
-}
-
-.carousel-item:hover .carousel-overlay span {
-  transform: translateY(0);
 }

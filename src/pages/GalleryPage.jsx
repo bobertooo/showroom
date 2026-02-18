@@ -1,16 +1,33 @@
 import MockupGallery from '../components/MockupGallery'
 import { getCurrentDesign } from '../utils/storage'
+import { useMockups } from '../hooks/useMockups'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+
+const TYPE_LABELS = {
+    'all': 'All',
+    'wall-art': 'Wall Art',
+    'poster': 'Poster',
+    'clothing': 'Clothing',
+    'accessories': 'Accessories'
+}
 
 function GalleryPage() {
     const navigate = useNavigate()
     const [design, setDesign] = useState(null)
+    const [filter, setFilter] = useState('all')
+    const { mockups } = useMockups()
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
         setDesign(currentDesign)
     }, [])
+
+    // Derive available types from the actual mockups
+    const availableTypes = useMemo(() => {
+        const types = new Set(mockups.map(m => m.type))
+        return ['all', ...Object.keys(TYPE_LABELS).filter(k => k !== 'all' && types.has(k))]
+    }, [mockups])
 
     return (
         <div className="page fade-in">
@@ -91,7 +108,29 @@ function GalleryPage() {
                     </p>
                 </div>
 
-                <MockupGallery />
+                {/* Filter bar */}
+                {availableTypes.length > 2 && (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        gap: 'var(--space-sm)',
+                        marginBottom: 'var(--space-md)',
+                        flexWrap: 'wrap'
+                    }}>
+                        {availableTypes.map(type => (
+                            <button
+                                key={type}
+                                className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+                                onClick={() => setFilter(type)}
+                            >
+                                {TYPE_LABELS[type] || type}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <MockupGallery filter={filter} />
             </div>
         </div>
     )

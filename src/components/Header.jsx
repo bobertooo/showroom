@@ -31,13 +31,19 @@ function Header() {
                         Create
                     </NavLink>
                     <NavLink
+                        to="/pricing"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                    >
+                        Pricing
+                    </NavLink>
+                    <NavLink
                         to="/gallery"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         Gallery
                     </NavLink>
 
-                    {user && user.username === 'robert' && (
+                    {user && user.role === 'admin' && (
                         <NavLink
                             to="/admin"
                             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}

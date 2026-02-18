@@ -11,12 +11,15 @@ import SignupPage from './pages/SignupPage'
 import { AuthProvider } from './context/AuthContext'
 import RequireAuth from './components/RequireAuth'
 
+import PricingPage from './pages/PricingPage'
+
 function App() {
     return (
         <AuthProvider>
             <Header />
             <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/create" element={<UploadPage />} />

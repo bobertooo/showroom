@@ -36,7 +36,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
             const deltaXPercent = (dx / imgWidth) * 100;
             const deltaYPercent = (dy / imgHeight) * 100;
 
-            if (productType === 'poster') {
+            if (productType === 'wall-art') {
                 setPlacement(prev => {
                     const p = prev[selectedHandle];
                     const newX = Math.max(0, Math.min(100, p.x + deltaXPercent));
@@ -110,7 +110,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
             const deltaXPercent = (deltaX / imgWidth) * 100
             const deltaYPercent = (deltaY / imgHeight) * 100
 
-            if (productType === 'poster') {
+            if (productType === 'wall-art') {
                 // Perspective Mode (4 points)
                 const newX = Math.max(0, Math.min(100, editDrag.startPoint.x + deltaXPercent))
                 const newY = Math.max(0, Math.min(100, editDrag.startPoint.y + deltaYPercent))
@@ -155,8 +155,8 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
             key,
             startX: e.clientX,
             startY: e.clientY,
-            startPoint: productType === 'poster' ? { ...placement[key] } : null,
-            startPlacement: productType === 'tshirt' ? { ...placement } : null
+            startPoint: productType === 'wall-art' ? { ...placement[key] } : null,
+            startPlacement: productType !== 'wall-art' ? { ...placement } : null
         })
     }
 
@@ -167,7 +167,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
             {/* Header */}
             <div style={{ padding: '1rem', background: '#1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h3 style={{ margin: 0, fontWeight: 600 }}>Mockup Editor ({productType === 'poster' ? 'Perspective' : 'Simple'})</h3>
+                    <h3 style={{ margin: 0, fontWeight: 600 }}>Mockup Editor ({productType === 'wall-art' ? 'Perspective' : 'Simple'})</h3>
                     <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Scroll/Ctrl+Wheel to Zoom • Drag/Shift+Drag to Pan</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -203,7 +203,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
 
                     {/* Overlay SVG */}
                     <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                        {productType === 'poster' ? (
+                        {productType === 'wall-art' ? (
                             <polygon
                                 points={`${placement.tl.x}% ${placement.tl.y}% ${placement.tr.x}% ${placement.tr.y}% ${placement.br.x}% ${placement.br.y}% ${placement.bl.x}% ${placement.bl.y}%`}
                                 fill="rgba(99, 102, 241, 0.2)" stroke="var(--color-accent-primary)" strokeWidth="1.5" vectorEffect="non-scaling-stroke"
@@ -218,7 +218,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
                     </svg>
 
                     {/* Handles */}
-                    {productType === 'poster' && Object.keys(placement).map(key => (
+                    {productType === 'wall-art' && Object.keys(placement).map(key => (
                         <div
                             key={key}
                             onMouseDown={(e) => startEditDrag(e, key)}
@@ -239,7 +239,7 @@ function MockupEditorModal({ image, initialPlacement, productType, onSave, onClo
                         </div>
                     ))}
 
-                    {productType === 'tshirt' && (
+                    {productType !== 'wall-art' && (
                         <>
                             {/* Drag Area */}
                             <div

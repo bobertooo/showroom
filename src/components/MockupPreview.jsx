@@ -2,11 +2,14 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { compositeImages, downloadCanvas, preloadImages, quickComposite } from '../utils/imageUtils'
 import DesignTransformOverlay from './DesignTransformOverlay'
+import { useAuth } from '../context/AuthContext'
 
 
 function MockupPreview({ mockup, designImage }) {
     const canvasRef = useRef(null)
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const isAdmin = user?.role === 'admin'
     const [initialLoading, setInitialLoading] = useState(true)
     const [error, setError] = useState(null)
     const [transform, setTransform] = useState({ scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
@@ -16,6 +19,7 @@ function MockupPreview({ mockup, designImage }) {
     const isDraggingRef = useRef(false)
     const cachedImagesRef = useRef(null)
     const renderTimerRef = useRef(null)
+    const rafRef = useRef(null)
 
     // Preload and cache images when mockup/design changes
     useEffect(() => {
@@ -45,7 +49,8 @@ function MockupPreview({ mockup, designImage }) {
             try {
                 const canvas = canvasRef.current
                 if (canvas) {
-                    await compositeImages(canvas, mockup.image, designImage, mockup.placement, transform, mockup.type !== 'tshirt')
+                    const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster';
+                    await compositeImages(canvas, mockup.image, designImage, mockup.placement, transform, shouldClip, mockup.type)
                 }
                 hasLoadedOnce.current = true
                 setInitialLoading(false)
@@ -60,6 +65,9 @@ function MockupPreview({ mockup, designImage }) {
             if (renderTimerRef.current) {
                 clearTimeout(renderTimerRef.current)
             }
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current)
+            }
         }
     }, [mockup, designImage, transform])
 
@@ -67,11 +75,16 @@ function MockupPreview({ mockup, designImage }) {
     const handleTransformChange = useCallback((newTransform) => {
         setTransform(newTransform)
 
-        // Use instant GPU-accelerated preview for all interactions
-        if (cachedImagesRef.current && canvasRef.current) {
-            const { mockupImg, designImg } = cachedImagesRef.current
-            quickComposite(canvasRef.current, mockupImg, designImg, mockup.placement, newTransform, mockup.type !== 'tshirt')
-        }
+        // Throttle canvas redraws to one per animation frame
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+        rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null
+            if (cachedImagesRef.current && canvasRef.current) {
+                const { mockupImg, designImg } = cachedImagesRef.current
+                const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster';
+                quickComposite(canvasRef.current, mockupImg, designImg, mockup.placement, newTransform, shouldClip, mockup.type)
+            }
+        })
     }, [mockup])
 
     const handleDraggingChange = useCallback((dragging) => {
@@ -192,94 +205,96 @@ function MockupPreview({ mockup, designImage }) {
             <div className="preview-controls-panel">
                 <h3 style={{ marginBottom: 'var(--space-md)', fontSize: '1.1rem' }}>Controls</h3>
 
-                <div className="preview-control-group">
-                    <label className="preview-control-label">Aspect Ratio</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <div style={{ flex: 1, position: 'relative' }}
-                            onMouseEnter={() => setHoveredFillBtn('fit')}
-                            onMouseLeave={() => setHoveredFillBtn(null)}
-                        >
-                            {hoveredFillBtn === 'fit' && (
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '100%',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    marginBottom: '8px',
-                                    padding: '6px 10px',
-                                    background: 'rgba(0,0,0,0.85)',
-                                    color: 'white',
-                                    borderRadius: '4px',
-                                    fontSize: '0.75rem',
-                                    pointerEvents: 'none',
-                                    whiteSpace: 'nowrap',
-                                    zIndex: 10,
-                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                                }}>
-                                    Keeps original aspect ratio
+                {(mockup.type === 'wall-art' || mockup.type === 'poster') && (
+                    <div className="preview-control-group">
+                        <label className="preview-control-label">Aspect Ratio</label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ flex: 1, position: 'relative' }}
+                                onMouseEnter={() => setHoveredFillBtn('fit')}
+                                onMouseLeave={() => setHoveredFillBtn(null)}
+                            >
+                                {hoveredFillBtn === 'fit' && (
                                     <div style={{
                                         position: 'absolute',
-                                        top: '100%',
+                                        bottom: '100%',
                                         left: '50%',
-                                        marginLeft: '-5px',
-                                        borderWidth: '5px',
-                                        borderStyle: 'solid',
-                                        borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
-                                    }} />
-                                </div>
-                            )}
-                            <button
-                                className={`btn ${transform.fillMode === 'fit' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => setTransform(t => ({ ...t, fillMode: 'fit' }))}
-                                style={{ width: '100%' }}
-                            >
-                                Fit
-                            </button>
-                        </div>
+                                        transform: 'translateX(-50%)',
+                                        marginBottom: '8px',
+                                        padding: '6px 10px',
+                                        background: 'rgba(0,0,0,0.85)',
+                                        color: 'white',
+                                        borderRadius: '4px',
+                                        fontSize: '0.75rem',
+                                        pointerEvents: 'none',
+                                        whiteSpace: 'nowrap',
+                                        zIndex: 10,
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                    }}>
+                                        Keeps original aspect ratio
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: '50%',
+                                            marginLeft: '-5px',
+                                            borderWidth: '5px',
+                                            borderStyle: 'solid',
+                                            borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
+                                        }} />
+                                    </div>
+                                )}
+                                <button
+                                    className={`btn ${transform.fillMode === 'fit' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setTransform(t => ({ ...t, fillMode: 'fit' }))}
+                                    style={{ width: '100%' }}
+                                >
+                                    Fit
+                                </button>
+                            </div>
 
-                        <div style={{ flex: 1, position: 'relative' }}
-                            onMouseEnter={() => setHoveredFillBtn('fill')}
-                            onMouseLeave={() => setHoveredFillBtn(null)}
-                        >
-                            {hoveredFillBtn === 'fill' && (
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '100%',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    marginBottom: '8px',
-                                    padding: '6px 10px',
-                                    background: 'rgba(0,0,0,0.85)',
-                                    color: 'white',
-                                    borderRadius: '4px',
-                                    fontSize: '0.75rem',
-                                    pointerEvents: 'none',
-                                    whiteSpace: 'nowrap',
-                                    zIndex: 10,
-                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                                }}>
-                                    Stretches to fill area
+                            <div style={{ flex: 1, position: 'relative' }}
+                                onMouseEnter={() => setHoveredFillBtn('fill')}
+                                onMouseLeave={() => setHoveredFillBtn(null)}
+                            >
+                                {hoveredFillBtn === 'fill' && (
                                     <div style={{
                                         position: 'absolute',
-                                        top: '100%',
+                                        bottom: '100%',
                                         left: '50%',
-                                        marginLeft: '-5px',
-                                        borderWidth: '5px',
-                                        borderStyle: 'solid',
-                                        borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
-                                    }} />
-                                </div>
-                            )}
-                            <button
-                                className={`btn ${transform.fillMode === 'fill' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => setTransform(t => ({ ...t, fillMode: 'fill' }))}
-                                style={{ width: '100%' }}
-                            >
-                                Fill
-                            </button>
+                                        transform: 'translateX(-50%)',
+                                        marginBottom: '8px',
+                                        padding: '6px 10px',
+                                        background: 'rgba(0,0,0,0.85)',
+                                        color: 'white',
+                                        borderRadius: '4px',
+                                        fontSize: '0.75rem',
+                                        pointerEvents: 'none',
+                                        whiteSpace: 'nowrap',
+                                        zIndex: 10,
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                    }}>
+                                        Stretches to fill area
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: '50%',
+                                            marginLeft: '-5px',
+                                            borderWidth: '5px',
+                                            borderStyle: 'solid',
+                                            borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
+                                        }} />
+                                    </div>
+                                )}
+                                <button
+                                    className={`btn ${transform.fillMode === 'fill' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setTransform(t => ({ ...t, fillMode: 'fill' }))}
+                                    style={{ width: '100%' }}
+                                >
+                                    Fill
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 <div className="preview-control-group">
                     <button
@@ -316,6 +331,15 @@ function MockupPreview({ mockup, designImage }) {
                     >
                         ← Different Mockup
                     </button>
+                    {isAdmin && (
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate(`/admin?edit=${mockup.id}`)}
+                            style={{ width: '100%', marginTop: 'var(--space-sm)' }}
+                        >
+                            ✏️ Edit Template
+                        </button>
+                    )}
                 </div>
             </div>
         </div >

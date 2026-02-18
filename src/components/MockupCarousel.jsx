@@ -15,12 +15,27 @@ function MockupCarousel() {
 
     useEffect(() => {
         // Use real mockups if available, otherwise placeholders
-        const sourceItems = mockups.length > 0 ? mockups : placeholders
+        let sourceItems = mockups.length > 0 ? mockups : placeholders
+
+        // Shuffle the items to show random templates/uploads
+        // Create a copy to avoid mutating state directly (though shuffle usually creates new array)
+        if (mockups.length > 0) {
+            sourceItems = [...mockups]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 12) // Pick 12 random items to keep the carousel fresh but manageable
+        }
 
         // Duplicate items to ensure smooth infinite scroll
-        // Ideally we want enough items to fill 2x the screen width
-        // For simplicity, we just double the list
-        setDisplayItems([...sourceItems, ...sourceItems, ...sourceItems])
+        // We ensure we have enough items for the track
+        let finalItems = [...sourceItems]
+        // If we have few items, duplicate more times to fill width
+        if (finalItems.length < 10) {
+            finalItems = [...sourceItems, ...sourceItems, ...sourceItems, ...sourceItems]
+        } else {
+            finalItems = [...sourceItems, ...sourceItems]
+        }
+
+        setDisplayItems(finalItems)
     }, [mockups])
 
     return (
@@ -37,10 +52,6 @@ function MockupCarousel() {
                                     <span>{item.name}</span>
                                 </div>
                             )}
-                            {/* Overlay or link? */}
-                            <Link to={item.image ? `/preview/${item.id}` : '/create'} className="carousel-overlay">
-                                <span>Preview</span>
-                            </Link>
                         </div>
                     ))}
                 </div>

@@ -8,18 +8,15 @@ function LandingPage() {
             <section className="hero">
                 <div className="container hero-content">
                     <h1 className="hero-title">
-                        Showcase Your Art <span className="text-gradient">Professionally</span>
+                        Mockups That Actually <span className="text-gradient">Sell Your Art</span>
                     </h1>
                     <p className="hero-subtitle">
-                        The ultimate mockup tool for artists, designers, and print-on-demand sellers.
-                        Create stunning, high-converting product images in seconds.
+                        Stop using fake, plasticky templates. Showroom gives you <strong>photorealistic, studio-quality results</strong> that make your work look expensive—without the expensive software.
                     </p>
                     <div className="hero-cta">
                         <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
                         <Link to="/gallery" className="btn btn-secondary btn-lg">View Gallery</Link>
                     </div>
-                    {/* Visual / Abstract Graphic - Minimal/Clean */}
-                    {/* Visual Removed for Minimal Text-First Look */}
                 </div>
             </section>
 
@@ -32,24 +29,20 @@ function LandingPage() {
                     <h2 className="section-title">Why Use Showroom?</h2>
                     <div className="features-grid">
                         <div className="feature-card">
-                            <div className="feature-icon">🎨</div>
-                            <h3>Artist First</h3>
-                            <p>Designed specifically for creators. Visualize your artwork on real products with accurate lighting and perspective.</p>
+                            <h3>It Just Looks Real</h3>
+                            <p>Say goodbye to flat, plasticky mockups. Our advanced blending engine naturally wraps your design around every curve, shadow, and wrinkle.</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">⚡</div>
-                            <h3>Instant Preview</h3>
-                            <p>Real-time rendering. Drag, drop, and adjust your design to see exactly how it looks before downloading.</p>
+                            <h3>Better Than The Others</h3>
+                            <p>Most mockup tools look fake or cost a fortune. Showroom gives you <strong>premium, high-end visuals</strong> that actually look like a real photoshoot.</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">👕</div>
-                            <h3>POD Ready</h3>
-                            <p>Perfect for Print-on-Demand. Generate professional assets for your shop without needing expensive photo shoots.</p>
+                            <h3>See It Before You Print</h3>
+                            <p>Don't waste money on samples. Visualize exactly how your artwork fits on the product instantly and ensure your design is perfect.</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">🔄</div>
-                            <h3>Smart Blending</h3>
-                            <p>Advanced blending modes ensure your design looks natural, respecting shadows and fabric textures.</p>
+                            <h3>Smart Texture Mapping</h3>
+                            <p>Your design inherits the product's natural texture—whether it's cotton, canvas, or matte paper. It doesn't look like a sticker.</p>
                         </div>
                     </div>
                 </div>

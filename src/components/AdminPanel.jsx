@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMockups } from '../hooks/useMockups'
 import { exportAllMockups, importMockups } from '../utils/storage'
 import { detectPlacement } from '../utils/imageUtils'
@@ -6,15 +7,15 @@ import MockupEditorModal from './MockupEditorModal'
 
 function AdminPanel() {
     const { mockups, addMockup, deleteMockup, loading, reload } = useMockups()
-    const [productType, setProductType] = useState('poster') // 'poster' | 'tshirt'
+    const [productType, setProductType] = useState('wall-art') // 'wall-art' | 'clothing' | 'accessories'
     const [image, setImage] = useState(null)
     const [selectedMockup, setSelectedMockup] = useState(null)
 
     const [imagePreview, setImagePreview] = useState(null)
 
     // Placement state depends on product type
-    // Poster: { tl, tr, br, bl } (Perspective)
-    // T-Shirt: { x, y, width, height } (Simple Rect)
+    // Wall Art: { tl, tr, br, bl } (Perspective)
+    // Clothing/Accessories: { x, y, width, height } (Simple Rect)
     const [placement, setPlacement] = useState({
         tl: { x: 20, y: 20 }, tr: { x: 80, y: 20 },
         br: { x: 80, y: 80 }, bl: { x: 20, y: 80 }
@@ -27,7 +28,7 @@ function AdminPanel() {
     const [isDragging, setIsDragging] = useState(false) // State for drag-and-drop upload zone
 
     // Bulk upload state
-    const [bulkType, setBulkType] = useState('poster')
+    const [bulkType, setBulkType] = useState('wall-art')
     const [bulkUploading, setBulkUploading] = useState(false)
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 })
     const [bulkDragging, setBulkDragging] = useState(false)
@@ -42,7 +43,7 @@ function AdminPanel() {
 
     // Switch placement mode when type changes
     useEffect(() => {
-        if (productType === 'poster') {
+        if (productType === 'wall-art') {
             setPlacement({
                 tl: { x: 20, y: 20 }, tr: { x: 80, y: 20 },
                 br: { x: 80, y: 80 }, bl: { x: 20, y: 80 }
@@ -51,6 +52,24 @@ function AdminPanel() {
             setPlacement({ x: 30, y: 30, width: 40, height: 40 })
         }
     }, [productType])
+
+    // Auto-load mockup for editing from URL query param (?edit=<id>)
+    useEffect(() => {
+        const [params] = [new URLSearchParams(window.location.search)]
+        const editId = params.get('edit')
+        if (editId && mockups.length > 0 && !selectedMockup) {
+            const target = mockups.find(m => m.id === editId)
+            if (target) {
+                setSelectedMockup(target)
+                setProductType(target.type)
+                setImage(target.image)
+                setImagePreview(target.image)
+                setPlacement(target.placement)
+                // Clean up the URL
+                window.history.replaceState({}, '', '/admin')
+            }
+        }
+    }, [mockups])
 
     const processFile = (file) => {
         if (file && (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/webp')) {
@@ -98,7 +117,7 @@ function AdminPanel() {
         setSelectedMockup(null)
         setImage(null)
         setImagePreview(null)
-        setProductType('poster')
+        setProductType('wall-art')
         setPlacement({ tl: { x: 20, y: 20 }, tr: { x: 80, y: 20 }, br: { x: 80, y: 80 }, bl: { x: 20, y: 80 } })
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -138,7 +157,7 @@ function AdminPanel() {
         setBulkUploading(true)
         setBulkProgress({ current: 0, total: validFiles.length })
 
-        const defaultPlacement = bulkType === 'poster'
+        const defaultPlacement = bulkType === 'wall-art'
             ? { tl: { x: 20, y: 20 }, tr: { x: 80, y: 20 }, br: { x: 80, y: 80 }, bl: { x: 20, y: 80 } }
             : { x: 30, y: 30, width: 40, height: 40 }
 
@@ -215,7 +234,7 @@ function AdminPanel() {
             const deltaXPercent = (deltaX / imgRect.width) * 100
             const deltaYPercent = (deltaY / imgRect.height) * 100
 
-            if (productType === 'poster') {
+            if (productType === 'wall-art') {
                 // Perspective Dragging
                 const newX = Math.max(0, Math.min(100, dragState.startPlacement[dragState.target].x + deltaXPercent))
                 const newY = Math.max(0, Math.min(100, dragState.startPlacement[dragState.target].y + deltaYPercent))
@@ -266,7 +285,7 @@ function AdminPanel() {
         const detected = await detectPlacement(imagePreview, x, y, rect);
 
         if (detected) {
-            if (productType === 'poster') {
+            if (productType === 'wall-art') {
                 setPlacement(detected);
             } else {
                 // Convert 4 points to bounding box rect
@@ -326,27 +345,22 @@ function AdminPanel() {
 
                 <div className="form-group">
                     <label className="form-label">Product Type</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                            <input
-                                type="radio"
-                                name="type"
-                                value="poster"
-                                checked={productType === 'poster'}
-                                onChange={(e) => setProductType(e.target.value)}
-                            />
-                            <span>Poster (Perspective)</span>
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                            <input
-                                type="radio"
-                                name="type"
-                                value="tshirt"
-                                checked={productType === 'tshirt'}
-                                onChange={(e) => setProductType(e.target.value)}
-                            />
-                            <span>T-Shirt (Simple Area)</span>
-                        </label>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {[
+                            { value: 'wall-art', label: '🖼️ Wall Art', desc: 'Perspective' },
+                            { value: 'clothing', label: '👕 Clothing', desc: 'Simple Area' },
+                            { value: 'accessories', label: '🎒 Accessories', desc: 'Simple Area' }
+                        ].map(opt => (
+                            <button
+                                key={opt.value}
+                                className={`btn ${productType === opt.value ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => setProductType(opt.value)}
+                                style={{ flex: '1 1 0', fontSize: '0.85rem', padding: '8px 12px', textAlign: 'center' }}
+                            >
+                                <div>{opt.label}</div>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '2px' }}>{opt.desc}</div>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -372,7 +386,7 @@ function AdminPanel() {
 
                             {/* Overlay Render */}
                             <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                                {productType === 'poster' ? (
+                                {productType === 'wall-art' ? (
                                     <polygon points={`${placement.tl.x}% ${placement.tl.y}% ${placement.tr.x}% ${placement.tr.y}% ${placement.br.x}% ${placement.br.y}% ${placement.bl.x}% ${placement.bl.y}%`} fill="rgba(99, 102, 241, 0.2)" stroke="var(--color-accent-primary)" strokeWidth="2" strokeDasharray="4" vectorEffect="non-scaling-stroke" />
                                 ) : (
                                     <rect
@@ -384,7 +398,7 @@ function AdminPanel() {
                             </svg>
 
                             {/* Handles */}
-                            {!autoDetecting && productType === 'poster' && Object.keys(placement).map(key => (
+                            {!autoDetecting && productType === 'wall-art' && Object.keys(placement).map(key => (
                                 <div key={key} style={{
                                     position: 'absolute', left: `${placement[key].x}%`, top: `${placement[key].y}%`,
                                     width: '30px', height: '30px', cursor: 'crosshair',
@@ -396,7 +410,7 @@ function AdminPanel() {
                                 </div>
                             ))}
 
-                            {!autoDetecting && productType === 'tshirt' && (
+                            {!autoDetecting && productType !== 'wall-art' && (
                                 <>
                                     {/* Interactive Rect Area */}
                                     <div
@@ -430,7 +444,7 @@ function AdminPanel() {
                     <div className="form-group">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
                             <label className="form-label">
-                                {productType === 'poster' ? 'Corner Placement' : 'Area Placement'}
+                                {productType === 'wall-art' ? 'Corner Placement' : 'Area Placement'}
                             </label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }} onClick={() => setShowEditor(true)}>
@@ -460,15 +474,21 @@ function AdminPanel() {
 
                 <div className="form-group">
                     <label className="form-label">Product Type (for all uploads)</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                            <input type="radio" name="bulkType" value="poster" checked={bulkType === 'poster'} onChange={(e) => setBulkType(e.target.value)} />
-                            <span>Poster (Perspective)</span>
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                            <input type="radio" name="bulkType" value="tshirt" checked={bulkType === 'tshirt'} onChange={(e) => setBulkType(e.target.value)} />
-                            <span>T-Shirt (Simple Area)</span>
-                        </label>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {[
+                            { value: 'wall-art', label: '🖼️ Wall Art' },
+                            { value: 'clothing', label: '👕 Clothing' },
+                            { value: 'accessories', label: '🎒 Accessories' }
+                        ].map(opt => (
+                            <button
+                                key={opt.value}
+                                className={`btn ${bulkType === opt.value ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => setBulkType(opt.value)}
+                                style={{ flex: '1 1 0', fontSize: '0.85rem', padding: '8px 10px' }}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -562,7 +582,9 @@ function AdminPanel() {
                                     }} title={mockup.edited ? 'Edited' : 'Not yet edited'} />
                                 </div>
                                 <div className="template-item-info">
-                                    <div className="template-item-name">{mockup.type === 'tshirt' ? 'T-Shirt (Simple)' : 'Poster (Perspective)'}</div>
+                                    <div className="template-item-name">
+                                        {mockup.type === 'clothing' ? '👕 Clothing' : mockup.type === 'accessories' ? '🎒 Accessories' : mockup.type === 'wall-art' ? '🖼️ Wall Art' : mockup.type === 'tshirt' ? '👕 T-Shirt' : '🖼️ Poster'}
+                                    </div>
                                     <div style={{ fontSize: '0.75rem', color: mockup.edited ? '#22c55e' : '#f59e0b', marginTop: '2px' }}>
                                         {mockup.edited ? '● Edited' : '○ Not edited'}
                                     </div>

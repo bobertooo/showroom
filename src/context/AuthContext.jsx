@@ -10,51 +10,50 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
 
+    // On mount, check if we have an active session
     useEffect(() => {
-        // Check local storage for persisted session
-        const storedUser = localStorage.getItem('showroom_user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
-        }
-        setLoading(false)
+        fetch('/api/auth/me', { credentials: 'include' })
+            .then(res => {
+                if (res.ok) return res.json()
+                throw new Error('Not authenticated')
+            })
+            .then(userData => setUser(userData))
+            .catch(() => setUser(null))
+            .finally(() => setLoading(false))
     }, [])
 
-    const login = (username, password) => {
-        return new Promise((resolve, reject) => {
-            // Mock authentication delay
-            setTimeout(() => {
-                if (username === 'robert' && password === 'password') {
-                    const userData = { username, role: 'admin' }
-                    setUser(userData)
-                    localStorage.setItem('showroom_user', JSON.stringify(userData))
-                    resolve(userData)
-                } else if (username && password) {
-                    // Allow other users to login as 'user' role
-                    const userData = { username, role: 'user' }
-                    setUser(userData)
-                    localStorage.setItem('showroom_user', JSON.stringify(userData))
-                    resolve(userData)
-                } else {
-                    reject(new Error('Invalid credentials'))
-                }
-            }, 500)
+    const login = async (username, password) => {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
         })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Login failed')
+        setUser(data)
+        return data
     }
 
-    const signup = (username, password) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const userData = { username, role: 'user' }
-                setUser(userData)
-                localStorage.setItem('showroom_user', JSON.stringify(userData))
-                resolve(userData)
-            }, 500)
+    const signup = async (username, password) => {
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
         })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Signup failed')
+        setUser(data)
+        return data
     }
 
-    const logout = () => {
+    const logout = async () => {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        })
         setUser(null)
-        localStorage.removeItem('showroom_user')
     }
 
     const value = {

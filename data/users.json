@@ -1,0 +1,18 @@
+[
+  {
+    "id": "user_1771282895297_njr6oahuc",
+    "username": "robert",
+    "password": "$2b$12$aQppQuiQoQyfkUsgZdvHnuZUivgUwowNvbY/SQiqBwdyCOyWgc.PW",
+    "role": "admin",
+    "plan": "pro",
+    "createdAt": "2026-02-16T23:01:35.297Z"
+  },
+  {
+    "id": "user_1771445849192_3w4ugbxbj",
+    "username": "admin",
+    "password": "$2b$12$LGYoLULDYumptCnDdVCUye5Vxhre0iXmwnm/V5IxOChKDTH6Y1XIO",
+    "role": "admin",
+    "plan": "pro",
+    "createdAt": "2026-02-18T20:17:29.193Z"
+  }
+]
