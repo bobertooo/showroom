@@ -19,6 +19,9 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust Railway's reverse proxy so rate-limit and session cookies work correctly
+app.set('trust proxy', 1)
+
 // ===== Paths =====
 const DATA_DIR = path.join(__dirname, 'data')
 const IMAGES_DIR = path.join(DATA_DIR, 'images')
