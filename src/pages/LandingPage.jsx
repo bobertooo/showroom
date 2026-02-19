@@ -63,9 +63,9 @@ function LandingPage() {
             <section className="cta-section">
                 <div className="container">
                     <div className="cta-card">
-                        <h2>Ready to publish your next Etsy listing?</h2>
-                        <p>Generate mockups for your POD shop fast, then reuse the same look across your whole catalog.</p>
-                        <Link to="/create" className="btn btn-primary btn-lg">Launch Editor</Link>
+                        <h2>Start selling more on Etsy today.</h2>
+                        <p>Turn your designs into high-converting product photos in seconds. No photoshoots, no samples, just sales.</p>
+                        <Link to="/create" className="btn btn-primary btn-lg">Launch Showroom Free</Link>
                     </div>
                 </div>
             </section>
