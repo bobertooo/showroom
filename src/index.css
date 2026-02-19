@@ -1055,8 +1055,7 @@ a:hover {
   }
 
   100% {
-    transform: translateX(-33.33333%);
-    /* Move by exactly 1/3 (one full set) */
+    transform: translateX(-33.3333%);
   }
 }
 

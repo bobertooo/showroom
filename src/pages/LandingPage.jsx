@@ -30,7 +30,7 @@ function LandingPage() {
                     <div className="features-grid">
                         <div className="feature-card">
                             <h3>It Just Looks Real</h3>
-                            <p>Say goodbye to flat, plasticky mockups. Our advanced blending engine naturally wraps your design around every curve, shadow, and wrinkle.</p>
+                            <p>Upload your design and see it placed directly on the product — with realistic shading and texture, not just a flat sticker effect.</p>
                         </div>
                         <div className="feature-card">
                             <h3>Better Than The Others</h3>

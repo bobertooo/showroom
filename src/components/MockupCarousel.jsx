@@ -14,28 +14,16 @@ function MockupCarousel() {
     }))
 
     useEffect(() => {
-        // Use real mockups if available, otherwise placeholders
         let sourceItems = mockups.length > 0 ? mockups : placeholders
 
-        // Shuffle the items to show random templates/uploads
-        // Create a copy to avoid mutating state directly (though shuffle usually creates new array)
         if (mockups.length > 0) {
             sourceItems = [...mockups]
                 .sort(() => Math.random() - 0.5)
-                .slice(0, 12) // Pick 12 random items to keep the carousel fresh but manageable
+                .slice(0, 12)
         }
 
-        // Duplicate items to ensure smooth infinite scroll
-        // We ensure we have enough items for the track
-        let finalItems = [...sourceItems]
-        // If we have few items, duplicate more times to fill width
-        if (finalItems.length < 10) {
-            finalItems = [...sourceItems, ...sourceItems, ...sourceItems, ...sourceItems]
-        } else {
-            finalItems = [...sourceItems, ...sourceItems]
-        }
-
-        setDisplayItems(finalItems)
+        // Always triple the items — CSS animation moves exactly -33.33% for a seamless loop
+        setDisplayItems([...sourceItems, ...sourceItems, ...sourceItems])
     }, [mockups])
 
     return (

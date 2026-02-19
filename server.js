@@ -12,6 +12,7 @@ import session from 'express-session'
 import passport from 'passport'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import Stripe from 'stripe'
+import sharp from 'sharp'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -266,9 +267,11 @@ async function saveImageFile(dataUrl, id) {
     if (!match) return dataUrl
 
     const safeId = sanitizeId(id)
-    const ext = match[1] === 'jpeg' ? 'jpg' : match[1]
     const base64Data = match[2]
-    const filename = `${safeId}.${ext}`
+    const inputBuffer = Buffer.from(base64Data, 'base64')
+
+    // Compress and convert to WebP for best size/quality ratio
+    const filename = `${safeId}.webp`
     const filepath = path.join(IMAGES_DIR, filename)
 
     // Extra safety: verify the resolved path is inside IMAGES_DIR
@@ -277,7 +280,11 @@ async function saveImageFile(dataUrl, id) {
         throw new Error('Invalid file path')
     }
 
-    await fs.writeFile(filepath, Buffer.from(base64Data, 'base64'))
+    await sharp(inputBuffer)
+        .resize({ width: 1600, withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toFile(filepath)
+
     return `/api/images/${filename}`
 }
 
