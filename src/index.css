@@ -203,7 +203,7 @@ a:hover {
   font-weight: 500;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .nav-link:hover,
@@ -225,7 +225,7 @@ a:hover {
   font-family: var(--font-heading);
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   border: 1px solid transparent;
   outline: none;
   text-decoration: none;
@@ -282,7 +282,7 @@ a:hover {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
   box-shadow: var(--shadow-sm);
 }
 
@@ -307,7 +307,7 @@ a:hover {
   padding: var(--space-3xl);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), background var(--transition-base);
   background: var(--color-bg-glass);
 }
 
@@ -494,7 +494,7 @@ a:hover {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-input:focus {
@@ -1041,10 +1041,10 @@ a:hover {
 
 .carousel-track {
   display: flex;
-  /* Use margin on items instead of gap for smoother loop calculation */
   width: max-content;
   animation: scroll 40s linear infinite;
   padding: var(--space-md) 0;
+  will-change: transform;
 }
 
 

@@ -30,7 +30,7 @@ function LandingPage() {
                     <div className="features-grid">
                         <div className="feature-card">
                             <h3>It Just Looks Real</h3>
-                            <p>Upload your design and see it placed directly on the product — with realistic shading and texture, not just a flat sticker effect.</p>
+                            <p>Upload your design and see it placed directly on the product, with realistic shading and texture, not just a flat sticker effect.</p>
                         </div>
                         <div className="feature-card">
                             <h3>Better Than The Others</h3>
