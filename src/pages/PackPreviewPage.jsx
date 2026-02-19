@@ -184,7 +184,7 @@ function PackPreviewPage() {
 
     // Derive the mockups that belong to this pack
     const packMockups = pack && !mockupsLoading
-        ? pack.mockupIds.map(mid => mockups.find(m => m.id === mid)).filter(Boolean)
+        ? (pack.mockupIds || pack.mockups || []).map(mid => mockups.find(m => m.id === mid)).filter(Boolean)
         : []
 
     // Auto-select all on load
