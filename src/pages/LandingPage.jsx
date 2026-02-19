@@ -13,7 +13,7 @@ function LandingPage() {
                             Mockups you'll <span className="text-gradient-purple">actually use.</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Stop using fake, plasticky templates. Showroom gives you <strong>photorealistic, studio-quality results</strong> that make your work look expensive—without the expensive software.
+                            Upload your design, pick a template, and get <strong>listing-ready product images in under a minute</strong>—no Photoshop, no photo shoots, no hassle.
                         </p>
                         <div className="hero-cta">
                             <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>

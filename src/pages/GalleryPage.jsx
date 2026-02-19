@@ -76,7 +76,7 @@ function GalleryPage() {
                                     <button
                                         className="btn btn-secondary"
                                         style={{ fontSize: '0.8rem', padding: '4px 12px' }}
-                                        onClick={() => navigate('/')}
+                                        onClick={() => navigate('/create')}
                                     >
                                         Change Design
                                     </button>
@@ -96,7 +96,7 @@ function GalleryPage() {
                             </p>
                             <button
                                 className="btn btn-primary"
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate('/create')}
                             >
                                 Upload Design First
                             </button>

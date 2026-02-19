@@ -235,17 +235,17 @@ a:hover {
   transform: translateY(1px);
 }
 
-/* Primary Button - Solid Black */
+/* Primary Button - Solid Black with gradient border */
 .btn-primary {
   background: #000000;
   color: #ffffff;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #6366f1;
 }
 
 .btn-primary:hover {
   background: #111827;
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #818cf8;
 }
 
 /* Secondary Button - Subtle Dark */
@@ -834,7 +834,7 @@ a:hover {
 }
 
 .text-gradient-purple {
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  background: linear-gradient(135deg, #6366f1, #818cf8);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
