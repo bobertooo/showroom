@@ -239,13 +239,13 @@ a:hover {
 .btn-primary {
   background: #000000;
   color: #ffffff;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #6366f1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #7c5cfc;
 }
 
 .btn-primary:hover {
   background: #111827;
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #818cf8;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px #a78bfa;
 }
 
 /* Secondary Button - Subtle Dark */
@@ -834,7 +834,7 @@ a:hover {
 }
 
 .text-gradient-purple {
-  background: linear-gradient(135deg, #6366f1, #818cf8);
+  background: linear-gradient(135deg, #7c5cfc, #a78bfa);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
