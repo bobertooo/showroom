@@ -161,8 +161,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.97);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -465,8 +464,7 @@ a:hover {
   transform: translateX(-50%);
   font-size: 0.7rem;
   color: var(--color-text-muted);
-  background: rgba(15, 15, 26, 0.7);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 15, 26, 0.82);
   padding: 3px 12px;
   border-radius: var(--radius-full);
   pointer-events: none;
@@ -878,7 +876,7 @@ a:hover {
   margin: 0 auto;
   transform: rotateX(10deg) rotateY(-10deg) rotateZ(5deg);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  background: rgba(30, 41, 59, 0.85);
   padding: var(--space-md);
   animation: float-card 6s ease-in-out infinite;
 }

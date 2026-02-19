@@ -56,7 +56,7 @@ function MockupGallery({ filter }) {
                     className="card card-clickable gallery-item"
                     onClick={() => navigate(`/preview/${mockup.id}`)}
                 >
-                    <img src={mockup.image} alt={mockup.name || 'Mockup Template'} />
+                    <img src={mockup.image} alt={mockup.name || 'Mockup Template'} loading="lazy" decoding="async" />
                 </div>
             ))}
         </div>

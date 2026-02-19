@@ -572,7 +572,7 @@ function AdminPanel() {
                         {mockups.map((mockup) => (
                             <div key={mockup.id} className="template-item">
                                 <div style={{ position: 'relative' }}>
-                                    <img src={mockup.image} alt={mockup.name} className="template-item-thumb" />
+                                    <img src={mockup.image} alt={mockup.name} className="template-item-thumb" loading="lazy" decoding="async" />
                                     <div style={{
                                         position: 'absolute', top: '6px', right: '6px',
                                         width: '10px', height: '10px', borderRadius: '50%',
