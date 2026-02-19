@@ -117,3 +117,8 @@ dist
 
 # Mac
 .DS_Store
+
+# Runtime data — managed by Railway Volume, not git
+data/images/
+data/mockups.json
+data/users.json
