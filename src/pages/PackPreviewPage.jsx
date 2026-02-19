@@ -44,7 +44,9 @@ function cropCanvasToRatio(srcCanvas, ratio) {
     return out
 }
 
-function PackMockupItem({ mockup, designImage, aspectRatio, selected, onToggle, index }) {
+const defaultTransform = { scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fill' }
+
+function PackMockupItem({ mockup, designImage, aspectRatio, transform, selected, onToggle, onEdit, index }) {
     const canvasRef = useRef(null)
     const [status, setStatus] = useState('rendering') // 'rendering' | 'done' | 'error'
 
@@ -54,10 +56,10 @@ function PackMockupItem({ mockup, designImage, aspectRatio, selected, onToggle, 
         const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster'
         const canvas = canvasRef.current
         if (!canvas) return
-        compositeImages(canvas, mockup.image, designImage, mockup.placement, {}, shouldClip, mockup.type)
+        compositeImages(canvas, mockup.image, designImage, mockup.placement, transform, shouldClip, mockup.type)
             .then(() => setStatus('done'))
             .catch(() => setStatus('error'))
-    }, [mockup, designImage])
+    }, [mockup, designImage, transform])
 
     const handleDownload = () => {
         if (!canvasRef.current || status !== 'done') return
@@ -130,14 +132,24 @@ function PackMockupItem({ mockup, designImage, aspectRatio, selected, onToggle, 
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {mockup.name || `Mockup ${index + 1}`}
                 </span>
-                <button
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
-                    onClick={(e) => { e.stopPropagation(); handleDownload() }}
-                    disabled={status !== 'done'}
-                >
-                    ↓ Save
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                        onClick={(e) => { e.stopPropagation(); onEdit() }}
+                        disabled={status === 'error'}
+                    >
+                        Edit
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                        onClick={(e) => { e.stopPropagation(); handleDownload() }}
+                        disabled={status !== 'done'}
+                    >
+                        ↓ Save
+                    </button>
+                </div>
             </div>
         </div>
     )
@@ -153,6 +165,8 @@ function PackPreviewPage() {
     const [aspectRatio, setAspectRatio] = useState(null) // null = original
     const [selected, setSelected] = useState(new Set())
     const [downloading, setDownloading] = useState(false)
+    const [transforms, setTransforms] = useState({})
+    const [editingMockupId, setEditingMockupId] = useState(null)
 
     // Load current design
     useEffect(() => {
@@ -211,7 +225,8 @@ function PackPreviewPage() {
                 const mockup = selectedMockups[i]
                 const canvas = document.createElement('canvas')
                 const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster'
-                await compositeImages(canvas, mockup.image, design, mockup.placement, {}, shouldClip, mockup.type)
+                const transform = transforms[mockup.id] || defaultTransform
+                await compositeImages(canvas, mockup.image, design, mockup.placement, transform, shouldClip, mockup.type)
                 const cropped = cropCanvasToRatio(canvas, aspectRatio)
                 const blob = await new Promise(resolve => cropped.toBlob(resolve, 'image/jpeg', 0.92))
                 zip.file(`${mockup.name || `mockup-${i + 1}`}.jpg`, blob)
@@ -356,8 +371,10 @@ function PackPreviewPage() {
                                 mockup={mockup}
                                 designImage={design}
                                 aspectRatio={aspectRatio}
+                                transform={transforms[mockup.id] || defaultTransform}
                                 selected={selected.has(mockup.id)}
                                 onToggle={() => toggleSelected(mockup.id)}
+                                onEdit={() => setEditingMockupId(mockup.id)}
                                 index={i}
                             />
                         ))}
