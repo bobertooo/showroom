@@ -10,10 +10,10 @@ function LandingPage() {
                 <div className="container hero-content">
                     <div className="hero-text">
                         <h1 className="hero-title">
-                            Mockups you'll <span className="text-gradient-purple">actually use.</span>
+                            Etsy-ready mockups in <span className="text-gradient-purple">minutes.</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Upload your design, pick a template, and get <strong>listing-ready product images in under a minute</strong>—no Photoshop, no photo shoots, no hassle.
+                            Built for <strong>print-on-demand</strong> and <strong>Etsy sellers</strong>: upload your design, pick a template, and export <strong>listing images fast</strong> with realistic texture and lighting.
                         </p>
                         <div className="hero-cta">
                             <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
@@ -37,23 +37,23 @@ function LandingPage() {
             {/* Features Section */}
             <section className="features">
                 <div className="container">
-                    <h2 className="section-title">Why Use Showroom?</h2>
+                    <h2 className="section-title">Why Etsy Sellers Use Showroom</h2>
                     <div className="features-grid">
                         <div className="feature-card">
-                            <h3>It Just Looks Real</h3>
-                            <p>Upload your design and see it placed directly on the product, with realistic shading and texture, not just a flat sticker effect.</p>
+                            <h3>Looks Like a Real Photo</h3>
+                            <p>Your design wraps into the product with realistic shading and texture, so your listing images feel authentic, not pasted on.</p>
                         </div>
                         <div className="feature-card">
-                            <h3>Better Than The Others</h3>
-                            <p>Most mockup tools look fake or cost a fortune. Showroom gives you <strong>premium, high-end visuals</strong> that actually look like a real photoshoot.</p>
+                            <h3>Made for POD Listings</h3>
+                            <p>Create consistent product images across variants without juggling templates, layers, or Photoshop workflows.</p>
                         </div>
                         <div className="feature-card">
-                            <h3>See It Before You Print</h3>
-                            <p>Don't waste money on samples. Visualize exactly how your artwork fits on the product instantly and ensure your design is perfect.</p>
+                            <h3>Check Placement Fast</h3>
+                            <p>Preview how your artwork fits before you order samples, so you catch sizing and alignment issues early.</p>
                         </div>
                         <div className="feature-card">
-                            <h3>Smart Texture Mapping</h3>
-                            <p>Your design inherits the product's natural texture—whether it's cotton, canvas, or matte paper. It doesn't look like a sticker.</p>
+                            <h3>Texture That Sells</h3>
+                            <p>Mockups inherit material texture (cotton, canvas, paper) so your prints look like they belong there.</p>
                         </div>
                     </div>
                 </div>
@@ -63,8 +63,8 @@ function LandingPage() {
             <section className="cta-section">
                 <div className="container">
                     <div className="cta-card">
-                        <h2>Ready to elevate your portfolio?</h2>
-                        <p>Join thousands of designers creating better product visuals today.</p>
+                        <h2>Ready to publish your next Etsy listing?</h2>
+                        <p>Generate mockups for your POD shop fast, then reuse the same look across your whole catalog.</p>
                         <Link to="/create" className="btn btn-primary btn-lg">Launch Editor</Link>
                     </div>
                 </div>
