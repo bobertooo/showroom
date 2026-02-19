@@ -827,6 +827,13 @@ a:hover {
   -webkit-text-fill-color: currentColor;
 }
 
+.text-gradient-purple {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Hero Visual Animation */
 .hero-visual {
   position: relative;
