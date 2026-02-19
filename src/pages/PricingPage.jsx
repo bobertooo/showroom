@@ -7,6 +7,7 @@ const PricingPage = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const [loading, setLoading] = useState(false)
+    const [billingLoading, setBillingLoading] = useState(false)
 
     const params = new URLSearchParams(location.search)
     const checkoutStatus = params.get('checkout')
@@ -35,6 +36,31 @@ const PricingPage = () => {
             alert('Checkout not available yet. Please add your Stripe keys to .env')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleManageBilling = async () => {
+        if (!user) {
+            navigate('/login', { state: { from: location } })
+            return
+        }
+
+        setBillingLoading(true)
+        try {
+            const res = await fetch('/api/checkout/create-portal-session', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            const data = await res.json()
+            if (data.url) {
+                window.location.href = data.url
+            } else {
+                alert(data.error || 'Billing portal is unavailable right now.')
+            }
+        } catch {
+            alert('Billing portal is unavailable right now.')
+        } finally {
+            setBillingLoading(false)
         }
     }
 
@@ -127,6 +153,22 @@ const PricingPage = () => {
                         textAlign: 'center'
                     }}>
                         Checkout was cancelled. You can try again when you're ready.
+                    </div>
+                )}
+
+                {user?.plan === 'pro' && (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginBottom: 'var(--space-xl)'
+                    }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={handleManageBilling}
+                            disabled={billingLoading}
+                        >
+                            {billingLoading ? 'Opening Billing...' : 'Manage Billing'}
+                        </button>
                     </div>
                 )}
 

@@ -19,6 +19,24 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 3001
+const isProduction = process.env.NODE_ENV === 'production'
+
+const CLIENT_URL = (process.env.CLIENT_URL ||
+    process.env.APP_URL ||
+    (isProduction && process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : 'http://localhost:3000')
+).replace(/\/$/, '')
+
+const SERVER_URL = (process.env.SERVER_URL ||
+    (isProduction && process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : `http://localhost:${PORT}`)
+).replace(/\/$/, '')
+
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || `${SERVER_URL}/api/auth/google/callback`
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
+const STRIPE_PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || ''
 
 // Trust Railway's reverse proxy so rate-limit and session cookies work correctly
 app.set('trust proxy', 1)
@@ -44,7 +62,7 @@ if (!existsSync(USERS_FILE)) {
 app.use(helmet({ contentSecurityPolicy: false })) // CSP disabled for dev flexibility
 
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
+    origin: isProduction
         ? (process.env.ALLOWED_ORIGIN || true) // same-origin in prod; set ALLOWED_ORIGIN for custom domain
         : 'http://localhost:3000',
     credentials: true
@@ -159,7 +177,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
+        callbackURL: GOOGLE_CALLBACK_URL
     }, async (accessToken, refreshToken, profile, done) => {
         try {
             const email = profile.emails?.[0]?.value?.toLowerCase()
@@ -197,7 +215,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         }
     }))
 
-    console.log('✅ Google OAuth configured')
+    console.log(`✅ Google OAuth configured (callback: ${GOOGLE_CALLBACK_URL})`)
 } else {
     console.log('⚠️  Google OAuth not configured (missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in .env)')
 }
@@ -444,8 +462,13 @@ app.post('/api/checkout/create-session', requireAuth, async (req, res) => {
 
     try {
         const { plan } = req.body
-        const prices = {
-            pro: {
+        if (plan !== 'pro') {
+            return res.status(400).json({ error: 'Invalid plan' })
+        }
+
+        const lineItem = STRIPE_PRO_PRICE_ID
+            ? { price: STRIPE_PRO_PRICE_ID, quantity: 1 }
+            : {
                 price_data: {
                     currency: 'usd',
                     product_data: { name: 'Showroom Pro' },
@@ -454,20 +477,28 @@ app.post('/api/checkout/create-session', requireAuth, async (req, res) => {
                 },
                 quantity: 1
             }
+
+        const sessionPayload = {
+            mode: 'subscription',
+            payment_method_types: ['card'],
+            line_items: [lineItem],
+            success_url: `${CLIENT_URL}/pricing?checkout=success`,
+            cancel_url: `${CLIENT_URL}/pricing?checkout=cancelled`,
+            client_reference_id: req.user.id,
+            metadata: {
+                userId: req.user.id,
+                plan
+            }
         }
 
-        if (!prices[plan]) {
-            return res.status(400).json({ error: 'Invalid plan' })
+        if (req.user.stripeCustomerId) {
+            sessionPayload.customer = req.user.stripeCustomerId
+        } else if (req.user.email) {
+            sessionPayload.customer_email = req.user.email
         }
 
         const sessionObj = await stripe.checkout.sessions.create({
-            mode: 'subscription',
-            payment_method_types: ['card'],
-            line_items: [prices[plan]],
-            success_url: `${req.headers.origin || 'http://localhost:3000'}/create?checkout=success`,
-            cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pricing?checkout=cancelled`,
-            client_reference_id: req.user.id,
-            customer_email: req.user.email || undefined
+            ...sessionPayload
         })
 
         res.json({ url: sessionObj.url })
@@ -476,9 +507,51 @@ app.post('/api/checkout/create-session', requireAuth, async (req, res) => {
     }
 })
 
+// POST /api/checkout/create-portal-session — Open Stripe Billing Portal
+app.post('/api/checkout/create-portal-session', requireAuth, async (req, res) => {
+    if (!stripe) {
+        return res.status(503).json({ error: 'Payment system not configured' })
+    }
+
+    try {
+        let customerId = req.user.stripeCustomerId
+
+        if (!customerId && req.user.email) {
+            const customerList = await stripe.customers.list({
+                email: req.user.email,
+                limit: 1
+            })
+            customerId = customerList.data[0]?.id
+        }
+
+        if (!customerId) {
+            return res.status(400).json({ error: 'No active billing account found for this user' })
+        }
+
+        if (!req.user.stripeCustomerId && customerId) {
+            const users = await readUsers()
+            const idx = users.findIndex(u => u.id === req.user.id)
+            if (idx !== -1) {
+                users[idx].stripeCustomerId = customerId
+                await writeUsers(users)
+            }
+        }
+
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: `${CLIENT_URL}/pricing`
+        })
+
+        res.json({ url: portalSession.url })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
 // Stripe Webhook handler (registered above express.json)
 async function handleStripeWebhook(req, res) {
     if (!stripe) return res.status(503).send('Stripe not configured')
+    if (!STRIPE_WEBHOOK_SECRET) return res.status(503).send('Stripe webhook secret not configured')
 
     const sig = req.headers['stripe-signature']
     let event
@@ -487,7 +560,7 @@ async function handleStripeWebhook(req, res) {
         event = stripe.webhooks.constructEvent(
             req.body,
             sig,
-            process.env.STRIPE_WEBHOOK_SECRET
+            STRIPE_WEBHOOK_SECRET
         )
     } catch (err) {
         console.error('Webhook signature verification failed:', err.message)
@@ -511,10 +584,29 @@ async function handleStripeWebhook(req, res) {
         }
     }
 
+    if (event.type === 'customer.subscription.updated') {
+        const subscription = event.data.object
+        const users = await readUsers()
+        const idx = users.findIndex(
+            u => u.stripeSubscriptionId === subscription.id || u.stripeCustomerId === subscription.customer
+        )
+
+        if (idx !== -1) {
+            const activeStates = ['trialing', 'active', 'past_due']
+            users[idx].plan = activeStates.includes(subscription.status) ? 'pro' : 'free'
+            users[idx].stripeCustomerId = subscription.customer
+            users[idx].stripeSubscriptionId = subscription.id
+            await writeUsers(users)
+            console.log(`ℹ️  User ${users[idx].id} subscription updated (${subscription.status})`)
+        }
+    }
+
     if (event.type === 'customer.subscription.deleted') {
         const subscription = event.data.object
         const users = await readUsers()
-        const idx = users.findIndex(u => u.stripeSubscriptionId === subscription.id)
+        const idx = users.findIndex(
+            u => u.stripeSubscriptionId === subscription.id || u.stripeCustomerId === subscription.customer
+        )
         if (idx !== -1) {
             users[idx].plan = 'free'
             delete users[idx].stripeSubscriptionId
@@ -741,4 +833,3 @@ app.listen(PORT, async () => {
     console.log('')
     await autoSeedAdmin()
 })
-
