@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMockups } from '../hooks/useMockups'
+import { usePacks } from '../hooks/usePacks'
 import { exportAllMockups, importMockups } from '../utils/storage'
 import { detectPlacement } from '../utils/imageUtils'
 import MockupEditorModal from './MockupEditorModal'
 
 function AdminPanel() {
     const { mockups, addMockup, deleteMockup, loading, reload } = useMockups()
+    const { packs, addPack, updatePack, removePack } = usePacks()
     const [productType, setProductType] = useState('wall-art') // 'wall-art' | 'clothing' | 'accessories'
     const [image, setImage] = useState(null)
     const [selectedMockup, setSelectedMockup] = useState(null)
@@ -26,6 +28,13 @@ function AdminPanel() {
     const [autoDetecting, setAutoDetecting] = useState(false)
     const [showEditor, setShowEditor] = useState(false)
     const [isDragging, setIsDragging] = useState(false) // State for drag-and-drop upload zone
+
+    // Packs state
+    const [packName, setPackName] = useState('')
+    const [packDescription, setPackDescription] = useState('')
+    const [packMockupIds, setPackMockupIds] = useState(new Set())
+    const [editingPack, setEditingPack] = useState(null) // pack being edited, or null
+    const [packSaving, setPackSaving] = useState(false)
 
     // Bulk upload state
     const [bulkType, setBulkType] = useState('wall-art')
@@ -598,8 +607,176 @@ function AdminPanel() {
                     </div>
                 )}
             </div>
+
+            {/* ===== Packs Manager ===== */}
+            <div className="card admin-section">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                    <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-accent-primary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem'
+                    }}>🗂️</div>
+                    <h3 className="admin-section-title" style={{ margin: 0, border: 'none', padding: 0 }}>
+                        {editingPack ? `Editing Pack: ${editingPack.name}` : 'Create New Pack'}
+                    </h3>
+                    {editingPack && (
+                        <button className="btn btn-secondary" style={{ marginLeft: 'auto', fontSize: '0.8rem', padding: '6px 12px' }}
+                            onClick={() => { setEditingPack(null); setPackName(''); setPackDescription(''); setPackMockupIds(new Set()) }}>
+                            Cancel
+                        </button>
+                    )}
+                </div>
+
+                <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-md)', fontSize: '0.9rem' }}>
+                    Group templates into a pack. Users can apply their design to all templates at once.
+                </p>
+
+                <div className="form-group">
+                    <label className="form-label">Pack Name</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Wall Art Bundle"
+                        value={packName}
+                        onChange={e => setPackName(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.95rem' }}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Description (optional)</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Framed & canvas options"
+                        value={packDescription}
+                        onChange={e => setPackDescription(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.95rem' }}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Select Templates ({packMockupIds.size} selected)</label>
+                    {mockups.length === 0 ? (
+                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>No templates yet. Upload some first.</p>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px', maxHeight: '300px', overflowY: 'auto', padding: '4px' }}>
+                            {mockups.map(mockup => {
+                                const checked = packMockupIds.has(mockup.id)
+                                return (
+                                    <div
+                                        key={mockup.id}
+                                        onClick={() => {
+                                            setPackMockupIds(prev => {
+                                                const next = new Set(prev)
+                                                next.has(mockup.id) ? next.delete(mockup.id) : next.add(mockup.id)
+                                                return next
+                                            })
+                                        }}
+                                        style={{
+                                            border: checked ? '2px solid var(--color-accent-primary)' : '2px solid var(--color-border)',
+                                            borderRadius: 'var(--radius-md)', overflow: 'hidden',
+                                            cursor: 'pointer', position: 'relative', transition: 'border-color 0.15s'
+                                        }}
+                                    >
+                                        <img src={mockup.image} alt={mockup.name} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                                        {checked && (
+                                            <div style={{
+                                                position: 'absolute', top: '4px', right: '4px',
+                                                background: 'var(--color-accent-primary)', borderRadius: '50%',
+                                                width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div style={{ fontSize: '0.65rem', padding: '3px 4px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: 'var(--color-bg-card)' }}>
+                                            {mockup.name || mockup.type}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <button
+                    className="btn btn-primary"
+                    disabled={!packName.trim() || packMockupIds.size === 0 || packSaving}
+                    style={{ width: '100%' }}
+                    onClick={async () => {
+                        setPackSaving(true)
+                        try {
+                            const payload = {
+                                ...(editingPack ? { id: editingPack.id } : {}),
+                                name: packName.trim(),
+                                description: packDescription.trim(),
+                                mockupIds: Array.from(packMockupIds)
+                            }
+                            if (editingPack) {
+                                await updatePack(payload)
+                            } else {
+                                await addPack(payload)
+                            }
+                            setEditingPack(null)
+                            setPackName('')
+                            setPackDescription('')
+                            setPackMockupIds(new Set())
+                        } finally {
+                            setPackSaving(false)
+                        }
+                    }}
+                >
+                    {packSaving ? 'Saving…' : (editingPack ? 'Update Pack' : 'Create Pack')}
+                </button>
+
+                {/* Existing packs list */}
+                {packs.length > 0 && (
+                    <div style={{ marginTop: 'var(--space-xl)' }}>
+                        <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Existing Packs ({packs.length})
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {packs.map(pack => (
+                                <div key={pack.id} className="template-item">
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: '600', marginBottom: '2px' }}>{pack.name}</div>
+                                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                                            {pack.mockupIds.length} template{pack.mockupIds.length !== 1 ? 's' : ''}
+                                            {pack.description ? ` · ${pack.description}` : ''}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            className="btn btn-secondary"
+                                            style={{ padding: 'var(--space-sm) var(--space-md)' }}
+                                            onClick={() => {
+                                                setEditingPack(pack)
+                                                setPackName(pack.name)
+                                                setPackDescription(pack.description || '')
+                                                setPackMockupIds(new Set(pack.mockupIds))
+                                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                                            }}
+                                        >Edit</button>
+                                        <button
+                                            className="btn btn-danger"
+                                            style={{ padding: 'var(--space-sm) var(--space-md)' }}
+                                            onClick={async () => {
+                                                if (window.confirm(`Delete pack "${pack.name}"?`)) {
+                                                    await removePack(pack.id)
+                                                }
+                                            }}
+                                        >Delete</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
 
 export default AdminPanel
+

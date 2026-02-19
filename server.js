@@ -46,6 +46,7 @@ const DATA_DIR = path.join(__dirname, 'data')
 const IMAGES_DIR = path.join(DATA_DIR, 'images')
 const MOCKUPS_FILE = path.join(DATA_DIR, 'mockups.json')
 const USERS_FILE = path.join(DATA_DIR, 'users.json')
+const PACKS_FILE = path.join(DATA_DIR, 'packs.json')
 
 // Ensure data directories exist
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR)
@@ -55,6 +56,9 @@ if (!existsSync(MOCKUPS_FILE)) {
 }
 if (!existsSync(USERS_FILE)) {
     fs.writeFile(USERS_FILE, '[]', 'utf-8')
+}
+if (!existsSync(PACKS_FILE)) {
+    fs.writeFile(PACKS_FILE, '[]', 'utf-8')
 }
 
 // ===== Security Middleware =====
@@ -617,6 +621,90 @@ async function handleStripeWebhook(req, res) {
 
     res.json({ received: true })
 }
+
+// ============================================================
+//  PACKS API ROUTES (Public read, Admin write)
+// ============================================================
+
+async function readPacks() {
+    try {
+        const raw = await fs.readFile(PACKS_FILE, 'utf-8')
+        return JSON.parse(raw)
+    } catch (err) {
+        if (err.code === 'ENOENT') return []
+        throw err
+    }
+}
+
+async function writePacks(packs) {
+    await fs.writeFile(PACKS_FILE, JSON.stringify(packs, null, 2), 'utf-8')
+}
+
+function generatePackId() {
+    return `pack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+// GET /api/packs — Public: list all packs
+app.get('/api/packs', async (req, res) => {
+    try {
+        const packs = await readPacks()
+        res.json(packs)
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// POST /api/packs — Admin only: create pack
+app.post('/api/packs', requireAdmin, async (req, res) => {
+    try {
+        const { name, description, mockupIds } = req.body
+        if (!name || !Array.isArray(mockupIds) || mockupIds.length === 0) {
+            return res.status(400).json({ error: 'name and mockupIds[] are required' })
+        }
+        const packs = await readPacks()
+        const newPack = {
+            id: generatePackId(),
+            name,
+            description: description || '',
+            mockupIds,
+            createdAt: new Date().toISOString()
+        }
+        packs.push(newPack)
+        await writePacks(packs)
+        res.json(newPack)
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// PUT /api/packs/:id — Admin only: update pack
+app.put('/api/packs/:id', requireAdmin, async (req, res) => {
+    try {
+        const id = sanitizeId(req.params.id)
+        const { name, description, mockupIds } = req.body
+        const packs = await readPacks()
+        const idx = packs.findIndex(p => p.id === id)
+        if (idx === -1) return res.status(404).json({ error: 'Pack not found' })
+        packs[idx] = { ...packs[idx], name: name ?? packs[idx].name, description: description ?? packs[idx].description, mockupIds: mockupIds ?? packs[idx].mockupIds }
+        await writePacks(packs)
+        res.json(packs[idx])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// DELETE /api/packs/:id — Admin only: delete pack
+app.delete('/api/packs/:id', requireAdmin, async (req, res) => {
+    try {
+        const id = sanitizeId(req.params.id)
+        const packs = await readPacks()
+        const filtered = packs.filter(p => p.id !== id)
+        await writePacks(filtered)
+        res.json({ success: true })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
 
 // ============================================================
 //  MOCKUP API ROUTES (Public read, Admin write)

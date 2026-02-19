@@ -1,6 +1,7 @@
 import MockupGallery from '../components/MockupGallery'
 import { getCurrentDesign } from '../utils/storage'
 import { useMockups } from '../hooks/useMockups'
+import { usePacks } from '../hooks/usePacks'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState, useMemo } from 'react'
 
@@ -12,11 +13,88 @@ const TYPE_LABELS = {
     'accessories': 'Accessories'
 }
 
+function PackCard({ pack, mockups }) {
+    const navigate = useNavigate()
+    const packMockups = pack.mockupIds
+        .map(id => mockups.find(m => m.id === id))
+        .filter(Boolean)
+        .slice(0, 4)
+
+    return (
+        <div
+            className="card card-clickable"
+            style={{ overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onClick={() => navigate(`/pack/${pack.id}`)}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = '' }}
+        >
+            {/* Thumbnail grid */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: packMockups.length >= 2 ? '1fr 1fr' : '1fr',
+                gridTemplateRows: packMockups.length >= 3 ? '1fr 1fr' : '1fr',
+                aspectRatio: '1',
+                overflow: 'hidden',
+                background: 'var(--color-bg-secondary)'
+            }}>
+                {packMockups.length === 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📦</div>
+                ) : (
+                    packMockups.map((m, i) => (
+                        <img key={m.id} src={m.image} alt={m.name} style={{
+                            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                            opacity: i === 3 && pack.mockupIds.length > 4 ? 0.6 : 1
+                        }} />
+                    ))
+                )}
+                {packMockups.length === 4 && pack.mockupIds.length > 4 && (
+                    <div style={{
+                        position: 'absolute', bottom: 0, right: 0,
+                        background: 'rgba(0,0,0,0.6)', color: 'white',
+                        fontSize: '0.75rem', padding: '3px 6px', borderTopLeftRadius: '6px'
+                    }}>
+                        +{pack.mockupIds.length - 4} more
+                    </div>
+                )}
+            </div>
+
+            {/* Pack info */}
+            <div style={{ padding: 'var(--space-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <div style={{ fontWeight: '700', fontSize: '1rem' }}>{pack.name}</div>
+                    <div style={{
+                        background: 'var(--color-accent-primary)', color: 'white',
+                        fontSize: '0.7rem', fontWeight: '600', borderRadius: '999px',
+                        padding: '2px 8px'
+                    }}>
+                        {pack.mockupIds.length} template{pack.mockupIds.length !== 1 ? 's' : ''}
+                    </div>
+                </div>
+                {pack.description && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', lineHeight: '1.4' }}>
+                        {pack.description}
+                    </div>
+                )}
+                <div style={{
+                    marginTop: 'var(--space-sm)', fontSize: '0.8rem', color: 'var(--color-accent-primary)',
+                    fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px'
+                }}>
+                    Apply to all templates
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 function GalleryPage() {
     const navigate = useNavigate()
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
     const { mockups } = useMockups()
+    const { packs, loading: packsLoading } = usePacks()
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
@@ -104,36 +182,66 @@ function GalleryPage() {
                     )}
 
                     <p style={{ maxWidth: '600px', margin: '0 auto', color: 'var(--color-text-secondary)' }}>
-                        Select a mockup template below to preview your design.
+                        Pick a pack to apply your design to multiple templates at once, or choose an individual mockup below.
                     </p>
                 </div>
 
-                {/* Filter bar */}
-                {availableTypes.length > 2 && (
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-start',
-                        gap: 'var(--space-sm)',
-                        marginBottom: 'var(--space-md)',
-                        flexWrap: 'wrap'
-                    }}>
-                        {availableTypes.map(type => (
-                            <button
-                                key={type}
-                                className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
-                                style={{ fontSize: '0.85rem', padding: '6px 16px' }}
-                                onClick={() => setFilter(type)}
-                            >
-                                {TYPE_LABELS[type] || type}
-                            </button>
-                        ))}
+                {/* Packs section */}
+                {!packsLoading && packs.length > 0 && (
+                    <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>🗂️ Packs</h2>
+                            <div style={{
+                                height: '1px', flex: 1,
+                                background: 'linear-gradient(to right, var(--color-border), transparent)'
+                            }} />
+                        </div>
+                        <div className="gallery-grid">
+                            {packs.map(pack => (
+                                <PackCard key={pack.id} pack={pack} mockups={mockups} />
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                <MockupGallery filter={filter} />
+                {/* Individual mockups section */}
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.3rem' }}>🖼️ Individual Mockups</h2>
+                        <div style={{
+                            height: '1px', flex: 1,
+                            background: 'linear-gradient(to right, var(--color-border), transparent)'
+                        }} />
+                    </div>
+
+                    {/* Filter bar */}
+                    {availableTypes.length > 2 && (
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-start',
+                            gap: 'var(--space-sm)',
+                            marginBottom: 'var(--space-md)',
+                            flexWrap: 'wrap'
+                        }}>
+                            {availableTypes.map(type => (
+                                <button
+                                    key={type}
+                                    className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+                                    onClick={() => setFilter(type)}
+                                >
+                                    {TYPE_LABELS[type] || type}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    <MockupGallery filter={filter} />
+                </div>
             </div>
         </div>
     )
 }
 
 export default GalleryPage
+

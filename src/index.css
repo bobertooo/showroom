@@ -457,7 +457,21 @@ a:hover {
   transform: scale(1.05);
 }
 
+/* ===== Pack Preview Grid ===== */
+.pack-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-lg);
+}
 
+.pack-preview-item {
+  overflow: hidden;
+}
+
+.pack-preview-item canvas {
+  display: block;
+  width: 100%;
+}
 
 /* ===== Preview Canvas ===== */
 .preview-container {

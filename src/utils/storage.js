@@ -53,6 +53,45 @@ export async function deleteMockup(id) {
     if (!response.ok) throw new Error('Failed to delete mockup')
 }
 
+// ===== Packs =====
+
+export async function getAllPacks() {
+    const response = await fetch('/api/packs', API_OPTS)
+    if (!response.ok) throw new Error('Failed to fetch packs')
+    return response.json()
+}
+
+export async function savePack(pack) {
+    const isUpdate = !!pack.id
+    if (isUpdate) {
+        const response = await fetch(`/api/packs/${pack.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(pack)
+        })
+        if (!response.ok) throw new Error('Failed to update pack')
+        return response.json()
+    } else {
+        const response = await fetch('/api/packs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(pack)
+        })
+        if (!response.ok) throw new Error('Failed to create pack')
+        return response.json()
+    }
+}
+
+export async function deletePack(id) {
+    const response = await fetch(`/api/packs/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+    })
+    if (!response.ok) throw new Error('Failed to delete pack')
+}
+
 // Session storage for the current design
 // Uses in-memory variable as primary store since large images
 // can exceed sessionStorage's ~5MB quota
