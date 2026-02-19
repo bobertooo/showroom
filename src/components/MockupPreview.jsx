@@ -5,14 +5,14 @@ import DesignTransformOverlay from './DesignTransformOverlay'
 import { useAuth } from '../context/AuthContext'
 
 
-function MockupPreview({ mockup, designImage }) {
+function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel }) {
     const canvasRef = useRef(null)
     const navigate = useNavigate()
     const { user } = useAuth()
     const isAdmin = user?.role === 'admin'
     const [initialLoading, setInitialLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [transform, setTransform] = useState({ scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
+    const [transform, setTransform] = useState(initialTransform || { scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
     const [designSelected, setDesignSelected] = useState(false)
     const [hoveredFillBtn, setHoveredFillBtn] = useState(null)
     const hasLoadedOnce = useRef(false)
@@ -149,8 +149,21 @@ function MockupPreview({ mockup, designImage }) {
 
 
 
-    return (
-        <div className="preview-layout fade-in">
+    const isModal = !!onSave
+
+    const content = (
+        <div className={`preview-layout ${isModal ? '' : 'fade-in'}`} style={isModal ? {
+            background: 'var(--color-bg-primary)',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            width: '90vw',
+            maxWidth: '1200px',
+            maxHeight: '90vh',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            border: '1px solid var(--color-border)',
+            display: 'flex',
+            flexDirection: 'row'
+        } : {}}>
             {/* Left: Canvas preview */}
             <div className="preview-canvas-side">
                 <div className="preview-canvas-wrapper">
@@ -311,39 +324,76 @@ function MockupPreview({ mockup, designImage }) {
                 <div style={{ flex: 1 }}></div>
 
                 <div className="preview-control-group" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-lg)' }}>
-                    <button
-                        className="btn btn-primary"
-                        onClick={handleDownload}
-                        disabled={initialLoading || error}
-                        style={{ width: '100%' }}
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Download
-                    </button>
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => navigate('/gallery')}
-                        style={{ width: '100%' }}
-                    >
-                        ← Different Mockup
-                    </button>
-                    {isAdmin && (
-                        <button
-                            className="btn btn-secondary"
-                            onClick={() => navigate(`/admin?edit=${mockup.id}`)}
-                            style={{ width: '100%', marginTop: 'var(--space-sm)' }}
-                        >
-                            ✏️ Edit Template
-                        </button>
+                    {isModal ? (
+                        <>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => onSave(transform)}
+                                style={{ width: '100%', marginBottom: 'var(--space-sm)' }}
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={onCancel}
+                                style={{ width: '100%' }}
+                            >
+                                Cancel
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleDownload}
+                                disabled={initialLoading || error}
+                                style={{ width: '100%' }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => navigate('/gallery')}
+                                style={{ width: '100%' }}
+                            >
+                                ← Different Mockup
+                            </button>
+                            {isAdmin && (
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => navigate(`/admin?edit=${mockup.id}`)}
+                                    style={{ width: '100%', marginTop: 'var(--space-sm)' }}
+                                >
+                                    ✏️ Edit Template
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
         </div >
     )
+
+    if (isModal) {
+        return (
+            <div style={{
+                position: 'fixed', inset: 0,
+                background: 'rgba(0,0,0,0.85)',
+                zIndex: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '2rem'
+            }}>
+                {content}
+            </div>
+        )
+    }
+
+    return content
 }
 
 export default MockupPreview
