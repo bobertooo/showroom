@@ -690,9 +690,44 @@ if (existsSync(distPath)) {
     })
 }
 
-app.listen(PORT, () => {
+// ===== Auto-seed admin from env vars (set SEED_ADMIN_USER + SEED_ADMIN_PASS in Railway) =====
+async function autoSeedAdmin() {
+    const seedUser = process.env.SEED_ADMIN_USER
+    const seedPass = process.env.SEED_ADMIN_PASS
+    if (!seedUser || !seedPass) return
+
+    try {
+        const users = await readUsers()
+        const existing = users.find(u => u.username === seedUser)
+        const hashed = await bcrypt.hash(seedPass, 12)
+
+        if (existing) {
+            existing.role = 'admin'
+            existing.password = hashed
+            await writeUsers(users)
+            console.log(`✅ Auto-seed: promoted '${seedUser}' to admin`)
+        } else {
+            users.push({
+                id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                username: seedUser,
+                password: hashed,
+                role: 'admin',
+                plan: 'pro',
+                createdAt: new Date().toISOString()
+            })
+            await writeUsers(users)
+            console.log(`✅ Auto-seed: created admin user '${seedUser}'`)
+        }
+    } catch (err) {
+        console.error('Auto-seed failed:', err.message)
+    }
+}
+
+app.listen(PORT, async () => {
     console.log(`\n🚀 Showroom API server running on port ${PORT}`)
     console.log(`   Data directory: ${DATA_DIR}`)
     console.log(`   Images directory: ${IMAGES_DIR}`)
     console.log('')
+    await autoSeedAdmin()
 })
+
