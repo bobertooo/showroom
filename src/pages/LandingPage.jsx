@@ -8,7 +8,7 @@ function LandingPage() {
             <section className="hero">
                 <div className="container hero-content">
                     <h1 className="hero-title">
-                        Mockups That Actually <span className="text-gradient">Sell Your Art</span>
+                        mockups you'll actually use.
                     </h1>
                     <p className="hero-subtitle">
                         Stop using fake, plasticky templates. Showroom gives you <strong>photorealistic, studio-quality results</strong> that make your work look expensive—without the expensive software.

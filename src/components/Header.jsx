@@ -31,12 +31,6 @@ function Header() {
                         Create
                     </NavLink>
                     <NavLink
-                        to="/pricing"
-                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                    >
-                        Pricing
-                    </NavLink>
-                    <NavLink
                         to="/gallery"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >

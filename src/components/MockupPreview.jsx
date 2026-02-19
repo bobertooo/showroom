@@ -115,7 +115,7 @@ function MockupPreview({ mockup, designImage }) {
                 </p>
                 <button
                     className="btn btn-primary"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/create')}
                 >
                     Upload Design
                 </button>
