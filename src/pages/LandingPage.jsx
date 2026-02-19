@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import MockupCarousel from '../components/MockupCarousel'
+import BeforeAfterSlider from '../components/BeforeAfterSlider'
 
 function LandingPage() {
     return (
@@ -7,15 +8,25 @@ function LandingPage() {
             {/* Hero Section */}
             <section className="hero">
                 <div className="container hero-content">
-                    <h1 className="hero-title">
-                        Mockups you'll <span className="text-gradient-purple">actually use.</span>
-                    </h1>
-                    <p className="hero-subtitle">
-                        Stop using fake, plasticky templates. Showroom gives you <strong>photorealistic, studio-quality results</strong> that make your work look expensive—without the expensive software.
-                    </p>
-                    <div className="hero-cta">
-                        <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
-                        <Link to="/gallery" className="btn btn-secondary btn-lg">View Gallery</Link>
+                    <div className="hero-text">
+                        <h1 className="hero-title">
+                            Mockups you'll <span className="text-gradient-purple">actually use.</span>
+                        </h1>
+                        <p className="hero-subtitle">
+                            Stop using fake, plasticky templates. Showroom gives you <strong>photorealistic, studio-quality results</strong> that make your work look expensive—without the expensive software.
+                        </p>
+                        <div className="hero-cta">
+                            <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
+                            <Link to="/gallery" className="btn btn-secondary btn-lg">View Gallery</Link>
+                        </div>
+                    </div>
+                    <div className="hero-slider">
+                        <BeforeAfterSlider
+                            beforeImage="/slider/before.jpg"
+                            afterImage="/slider/after.jpg"
+                            beforeLabel="Empty Mockup"
+                            afterLabel="With Design"
+                        />
                     </div>
                 </div>
             </section>
