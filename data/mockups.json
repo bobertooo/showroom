@@ -450,20 +450,20 @@
     "image": "/api/images/mockup_gen_minimalist_poster.png",
     "placement": {
       "tl": {
-        "x": 30,
-        "y": 10
+        "x": 10,
+        "y": 30
       },
       "tr": {
-        "x": 70,
-        "y": 10
+        "x": 90,
+        "y": 30
       },
       "br": {
-        "x": 70,
-        "y": 90
+        "x": 90,
+        "y": 70
       },
       "bl": {
-        "x": 30,
-        "y": 90
+        "x": 10,
+        "y": 70
       }
     },
     "edited": false,
@@ -479,19 +479,19 @@
     "placement": {
       "tl": {
         "x": 20,
-        "y": 20
+        "y": 30
       },
       "tr": {
         "x": 80,
-        "y": 20
+        "y": 30
       },
       "br": {
         "x": 80,
-        "y": 80
+        "y": 70
       },
       "bl": {
         "x": 20,
-        "y": 80
+        "y": 70
       }
     },
     "edited": false,
