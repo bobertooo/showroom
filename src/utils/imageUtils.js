@@ -424,16 +424,25 @@ export function calculatePlacementAspect(mockup) {
     if (!mockup.mockupWidth || !mockup.mockupHeight) return 1 // fallback if missing
 
     if (mockup.placement && mockup.placement.tl) {
-        // Perspective quad
-        const w1 = Math.sqrt(Math.pow(mockup.placement.tr.x - mockup.placement.tl.x, 2) + Math.pow(mockup.placement.tr.y - mockup.placement.tl.y, 2))
-        const w2 = Math.sqrt(Math.pow(mockup.placement.br.x - mockup.placement.bl.x, 2) + Math.pow(mockup.placement.br.y - mockup.placement.bl.y, 2))
-        const h1 = Math.sqrt(Math.pow(mockup.placement.bl.x - mockup.placement.tl.x, 2) + Math.pow(mockup.placement.bl.y - mockup.placement.tl.y, 2))
-        const h2 = Math.sqrt(Math.pow(mockup.placement.br.x - mockup.placement.tr.x, 2) + Math.pow(mockup.placement.br.y - mockup.placement.tr.y, 2))
+        // Perspective quad - first convert percentages to true template pixels
+        const toPx = (p) => ({
+            x: (p.x / 100) * mockup.mockupWidth,
+            y: (p.y / 100) * mockup.mockupHeight
+        });
 
-        // Percentages to absolute pixels (for aspect ratio, we can just use the percentages directly 
-        // IF the width/height of the mockup were the same. But they aren't, so we multiply by aspect ratio of the mockup)
-        const quadW = ((w1 + w2) / 2) * mockup.mockupWidth;
-        const quadH = ((h1 + h2) / 2) * mockup.mockupHeight;
+        const pTl = toPx(mockup.placement.tl);
+        const pTr = toPx(mockup.placement.tr);
+        const pBr = toPx(mockup.placement.br);
+        const pBl = toPx(mockup.placement.bl);
+
+        // Calculate Euclidean width/height in absolute pixel space
+        const w1 = Math.sqrt(Math.pow(pTr.x - pTl.x, 2) + Math.pow(pTr.y - pTl.y, 2));
+        const w2 = Math.sqrt(Math.pow(pBr.x - pBl.x, 2) + Math.pow(pBr.y - pBl.y, 2));
+        const h1 = Math.sqrt(Math.pow(pBl.x - pTl.x, 2) + Math.pow(pBl.y - pTl.y, 2));
+        const h2 = Math.sqrt(Math.pow(pBr.x - pTr.x, 2) + Math.pow(pBr.y - pTr.y, 2));
+
+        const quadW = (w1 + w2) / 2;
+        const quadH = (h1 + h2) / 2;
         return quadW / quadH;
     } else if (mockup.placement && mockup.placement.width) {
         // Flat legacy placement
