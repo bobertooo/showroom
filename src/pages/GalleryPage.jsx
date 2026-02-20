@@ -95,7 +95,7 @@ function GalleryPage() {
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
     const [isIndividualCollapsed, setIsIndividualCollapsed] = useState(false)
-    const [designAspectCategory, setDesignAspectCategory] = useState(null)
+    const [designAspectRatio, setDesignAspectRatio] = useState(null)
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
 
@@ -107,9 +107,7 @@ function GalleryPage() {
             const img = new Image()
             img.onload = () => {
                 const aspect = img.width / img.height
-                if (aspect < 0.95) setDesignAspectCategory('portrait')
-                else if (aspect > 1.05) setDesignAspectCategory('landscape')
-                else setDesignAspectCategory('square')
+                setDesignAspectRatio(aspect)
             }
             img.src = currentDesign
         }
@@ -248,7 +246,7 @@ function GalleryPage() {
                                 </div>
                             )}
 
-                            <MockupGallery filter={filter} designAspectCategory={designAspectCategory} />
+                            <MockupGallery filter={filter} designAspectRatio={designAspectRatio} />
                         </div>
                     )}
                 </div>

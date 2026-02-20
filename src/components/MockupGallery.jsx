@@ -3,7 +3,7 @@ import { useMockups } from '../hooks/useMockups'
 import { calculatePlacementAspect } from '../utils/imageUtils'
 import { useMemo } from 'react'
 
-function MockupGallery({ filter, designAspectCategory }) {
+function MockupGallery({ filter, designAspectRatio }) {
     const { mockups, loading } = useMockups()
     const navigate = useNavigate()
 
@@ -12,27 +12,31 @@ function MockupGallery({ filter, designAspectCategory }) {
             ? mockups.filter(m => m.type === filter)
             : [...mockups]
 
-        if (designAspectCategory) {
+        if (designAspectRatio) {
             result.forEach(m => {
                 const aspect = calculatePlacementAspect(m)
-                let cat = 'square'
-                if (aspect < 0.95) cat = 'portrait'
-                else if (aspect > 1.05) cat = 'landscape'
 
-                m._aspectCategory = cat
-                m._isRecommended = cat === designAspectCategory
+                // Using log comparison to treat ratios symmetrically (e.g. 1:2 and 2:1 are equally distant from 1:1)
+                m._logAspectDiff = Math.abs(Math.log(aspect / designAspectRatio))
             })
 
-            // Sort recommended to top
+            // Sort closest match to the top
             result.sort((a, b) => {
-                if (a._isRecommended && !b._isRecommended) return -1
-                if (!a._isRecommended && b._isRecommended) return 1
-                return new Date(b.createdAt) - new Date(a.createdAt) // newer first
+                const diffA = a._logAspectDiff ?? 999
+                const diffB = b._logAspectDiff ?? 999
+                if (diffA !== diffB) return diffA - diffB
+                return new Date(b.createdAt) - new Date(a.createdAt) // newer first if equal match
+            })
+
+            // Mark the strongest matches as Recommended
+            result.forEach((m, idx) => {
+                // Recommend if it's one of the top 2 closest, OR if its aspect ratio is extremely close (< 10% diff)
+                m._isRecommended = idx < 2 || m._logAspectDiff < 0.1
             })
         }
 
         return result
-    }, [mockups, filter, designAspectCategory])
+    }, [mockups, filter, designAspectRatio])
 
     if (loading) {
         return (
