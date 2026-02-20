@@ -10,14 +10,21 @@ function LandingPage() {
                 <div className="container hero-content">
                     <div className="hero-text">
                         <h1 className="hero-title">
-                            Etsy-ready mockups in <span className="text-gradient-purple">minutes.</span>
+                            Photoreal mockups with real lighting and texture - <span className="text-gradient-purple">no PSDs.</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Built for <strong>print-on-demand</strong> and <strong>Etsy sellers</strong>: upload your design, pick a template, and export <strong>listing images fast</strong> with realistic texture and lighting.
+                            Built for <strong>print-on-demand</strong> and <strong>Etsy sellers</strong>: upload your design, pick a template, and export <strong>listing images fast</strong>.
                         </p>
                         <div className="hero-cta">
-                            <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
-                            <Link to="/gallery" className="btn btn-secondary btn-lg">View Gallery</Link>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <Link to="/create" className="btn btn-primary btn-lg">Start Creating for Free</Link>
+                                    <Link to="/gallery" className="btn btn-secondary btn-lg">View Gallery</Link>
+                                </div>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                                    No Photoshop. No templates. Export in 60s.
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div className="hero-slider">
@@ -48,8 +55,8 @@ function LandingPage() {
                             <p>Create consistent product images across variants without juggling templates, layers, or Photoshop workflows.</p>
                         </div>
                         <div className="feature-card">
-                            <h3>Check Placement Fast</h3>
-                            <p>Preview how your artwork fits before you order samples, so you catch sizing and alignment issues early.</p>
+                            <h3>Diverse Aesthetic Styles</h3>
+                            <p>From cozy bedrooms to sleek galleries, find the exact photorealistic aesthetic that fits your unique storefront vibe.</p>
                         </div>
                         <div className="feature-card">
                             <h3>Texture That Sells</h3>
