@@ -55,39 +55,51 @@ function DesignTransformOverlay({ mockup, designImage, transform, onTransformCha
             return
         }
 
-        // For resize: compute initial distance from cursor to design center
+        // For resize: compute initial distance from cursor to opposite corner (anchor)
         let initDist = 1
         if (mode === 'resize' && bounds && canvasRef.current) {
             const rect = canvasRef.current.getBoundingClientRect()
             const displayScaleX = rect.width / bounds.mockupWidth
             const displayScaleY = rect.height / bounds.mockupHeight
-            const centerX = rect.left + (bounds.x + bounds.width / 2) * displayScaleX
-            const centerY = rect.top + (bounds.y + bounds.height / 2) * displayScaleY
-            initDist = Math.max(1, Math.sqrt((pageX - centerX) ** 2 + (pageY - centerY) ** 2))
+
+            // Anchor is opposite corner
+            let anchorX = bounds.x
+            let anchorY = bounds.y
+            if (handleKey === 'tl') { anchorX = bounds.x + bounds.width; anchorY = bounds.y + bounds.height }
+            if (handleKey === 'tr') { anchorX = bounds.x; anchorY = bounds.y + bounds.height }
+            if (handleKey === 'bl') { anchorX = bounds.x + bounds.width; anchorY = bounds.y }
+            if (handleKey === 'br') { anchorX = bounds.x; anchorY = bounds.y }
+
+            const displayAnchorX = rect.left + anchorX * displayScaleX
+            const displayAnchorY = rect.top + anchorY * displayScaleY
+
+            initDist = Math.max(1, Math.sqrt((pageX - displayAnchorX) ** 2 + (pageY - displayAnchorY) ** 2))
         }
 
         dragStart.current = {
             pageX,
             pageY,
             transform: { ...transform },
+            bounds: { ...bounds },
             mode,
+            handleKey,
             initDist
         }
         setDragging(mode)
         if (onDraggingChange) onDraggingChange(true)
     }, [transform, selected, onSelect, onDraggingChange, bounds, canvasRef])
 
-    const handleMouseDown = useCallback((e, mode) => {
+    const handleMouseDown = useCallback((e, mode, handleKey = null) => {
         e.preventDefault()
         e.stopPropagation()
-        startDrag(e.pageX, e.pageY, mode)
+        startDrag(e.pageX, e.pageY, mode, handleKey)
     }, [startDrag])
 
-    const handleTouchStart = useCallback((e, mode) => {
+    const handleTouchStart = useCallback((e, mode, handleKey = null) => {
         e.preventDefault()
         e.stopPropagation()
         const touch = e.touches[0]
-        startDrag(touch.pageX, touch.pageY, mode)
+        startDrag(touch.pageX, touch.pageY, mode, handleKey)
     }, [startDrag])
 
     useEffect(() => {
@@ -107,23 +119,57 @@ function DesignTransformOverlay({ mockup, designImage, transform, onTransformCha
                     offsetX: start.transform.offsetX + px,
                     offsetY: start.transform.offsetY + py
                 })
-            } else if (start.mode === 'resize' && bounds && canvasRef.current) {
-                // Scale = ratio of current cursor distance to initial cursor distance from center
+            } else if (start.mode === 'resize' && canvasRef.current && start.bounds) {
+                // Scale = ratio of current cursor distance to initial cursor distance from anchor node
                 const rect = canvasRef.current.getBoundingClientRect()
-                const displayScaleX = rect.width / bounds.mockupWidth
-                const displayScaleY = rect.height / bounds.mockupHeight
-                const centerX = rect.left + (bounds.x + bounds.width / 2) * displayScaleX
-                const centerY = rect.top + (bounds.y + bounds.height / 2) * displayScaleY
-                const currentDist = Math.max(1, Math.sqrt((pageX - centerX) ** 2 + (pageY - centerY) ** 2))
+                const displayScaleX = rect.width / start.bounds.mockupWidth
+                const displayScaleY = rect.height / start.bounds.mockupHeight
+
+                let anchorX = start.bounds.x
+                let anchorY = start.bounds.y
+                if (start.handleKey === 'tl') { anchorX = start.bounds.x + start.bounds.width; anchorY = start.bounds.y + start.bounds.height }
+                if (start.handleKey === 'tr') { anchorX = start.bounds.x; anchorY = start.bounds.y + start.bounds.height }
+                if (start.handleKey === 'bl') { anchorX = start.bounds.x + start.bounds.width; anchorY = start.bounds.y }
+                if (start.handleKey === 'br') { anchorX = start.bounds.x; anchorY = start.bounds.y }
+
+                const displayAnchorX = rect.left + anchorX * displayScaleX
+                const displayAnchorY = rect.top + anchorY * displayScaleY
+
+                const currentDist = Math.max(1, Math.sqrt((pageX - displayAnchorX) ** 2 + (pageY - displayAnchorY) ** 2))
                 const ratio = currentDist / start.initDist
 
                 // Allow larger scaling for shirts (unbounded) vs posters (clipped)
                 const maxScale = mockup.type === 'poster' ? 2.5 : 5.0
                 const newScale = Math.max(0.1, Math.min(maxScale, start.transform.scale * ratio))
 
+                // Compensate for center-scaling to keep the anchor pinned
+                const uncompensatedBounds = getDesignBoundsSync(
+                    start.bounds.mockupWidth, start.bounds.mockupHeight,
+                    imageDims.designW, imageDims.designH,
+                    mockup.placement,
+                    { ...start.transform, scale: newScale }
+                )
+
+                let uncompensatedAnchorX = uncompensatedBounds.x
+                let uncompensatedAnchorY = uncompensatedBounds.y
+                if (start.handleKey === 'tl') { uncompensatedAnchorX = uncompensatedBounds.x + uncompensatedBounds.width; uncompensatedAnchorY = uncompensatedBounds.y + uncompensatedBounds.height }
+                if (start.handleKey === 'tr') { uncompensatedAnchorX = uncompensatedBounds.x; uncompensatedAnchorY = uncompensatedBounds.y + uncompensatedBounds.height }
+                if (start.handleKey === 'bl') { uncompensatedAnchorX = uncompensatedBounds.x + uncompensatedBounds.width; uncompensatedAnchorY = uncompensatedBounds.y }
+                if (start.handleKey === 'br') { uncompensatedAnchorX = uncompensatedBounds.x; uncompensatedAnchorY = uncompensatedBounds.y }
+
+                // Diff in mockup pixels
+                const deltaX = uncompensatedAnchorX - anchorX
+                const deltaY = uncompensatedAnchorY - anchorY
+
+                // Convert to percentage
+                const pxDiff = -(deltaX / start.bounds.mockupWidth) * 100
+                const pyDiff = -(deltaY / start.bounds.mockupHeight) * 100
+
                 onTransformChange({
                     ...start.transform,
-                    scale: newScale
+                    scale: newScale,
+                    offsetX: start.transform.offsetX + pxDiff,
+                    offsetY: start.transform.offsetY + pyDiff
                 })
             }
         }
@@ -230,8 +276,8 @@ function DesignTransformOverlay({ mockup, designImage, transform, onTransformCha
                         key={h.key}
                         className={`design-handle ${dragging === 'resize' ? 'dragging' : ''}`}
                         style={{ ...h.style, width: handleSize, height: handleSize }}
-                        onMouseDown={(e) => handleMouseDown(e, 'resize')}
-                        onTouchStart={(e) => handleTouchStart(e, 'resize')}
+                        onMouseDown={(e) => handleMouseDown(e, 'resize', h.key)}
+                        onTouchStart={(e) => handleTouchStart(e, 'resize', h.key)}
                     />
                 ))}
             </div>
