@@ -340,6 +340,11 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
     const pixel = ctx.getImageData(pixelX, pixelY, 1, 1).data;
     const targetColor = { r: pixel[0], g: pixel[1], b: pixel[2] };
 
+    // Calculate target YUV
+    const targetY = 0.299 * targetColor.r + 0.587 * targetColor.g + 0.114 * targetColor.b;
+    const targetU = -0.147 * targetColor.r - 0.289 * targetColor.g + 0.436 * targetColor.b;
+    const targetV = 0.615 * targetColor.r - 0.515 * targetColor.g - 0.100 * targetColor.b;
+
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
 
@@ -353,7 +358,7 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
     let tr = { x: 0, y: 0 };
     let bl = { x: 0, y: 0 };
 
-    const threshold = 40;
+    const colorThreshold = 95;
     let found = false;
 
     // Flood Fill (BFS) to find connected component
@@ -372,9 +377,21 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
 
         const i = idx * 4;
         const r = data[i], g = data[i + 1], b = data[i + 2];
-        const diff = Math.abs(r - targetColor.r) + Math.abs(g - targetColor.g) + Math.abs(b - targetColor.b);
 
-        if (diff < threshold) {
+        const yVal = 0.299 * r + 0.587 * g + 0.114 * b;
+        const uVal = -0.147 * r - 0.289 * g + 0.436 * b;
+        const vVal = 0.615 * r - 0.515 * g - 0.100 * b;
+
+        const diffY = Math.abs(yVal - targetY);
+        const diffU = Math.abs(uVal - targetU);
+        const diffV = Math.abs(vVal - targetV);
+
+        // Weight luminance less to allow cast shadows (strong luma drop, low chroma shift) 
+        // while continuing to block strongly colored frames or very dark crevices.
+        // A diffY of 100 adds 85. So a shadow of 100 luma-drop passes (85 < 95).
+        const diff = diffY * 0.85 + diffU * 2.0 + diffV * 2.0;
+
+        if (diff < colorThreshold) {
             found = true;
 
             const sum = x + y;
