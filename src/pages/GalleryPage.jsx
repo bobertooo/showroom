@@ -93,6 +93,7 @@ function GalleryPage() {
     const navigate = useNavigate()
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
+    const [activeTab, setActiveTab] = useState('individual') // 'individual' | 'packs'
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
 
@@ -181,63 +182,90 @@ function GalleryPage() {
                         </div>
                     )}
 
-                    <p style={{ maxWidth: '600px', margin: '0 auto', color: 'var(--color-text-secondary)' }}>
-                        Pick a pack to apply your design to multiple templates at once, or choose an individual mockup below.
-                    </p>
+                    {/* Tabs Selector */}
+                    <div style={{
+                        display: 'flex',
+                        background: 'var(--color-bg-secondary)',
+                        padding: '4px',
+                        borderRadius: 'var(--radius-md)',
+                        marginBottom: 'var(--space-xl)',
+                        gap: '4px'
+                    }}>
+                        <button
+                            className={`btn ${activeTab === 'individual' ? 'btn-primary' : 'btn-ghost'}`}
+                            style={{ flex: 1, padding: '8px 24px', fontSize: '0.9rem' }}
+                            onClick={() => setActiveTab('individual')}
+                        >
+                            Individual Mockups
+                        </button>
+                        <button
+                            className={`btn ${activeTab === 'packs' ? 'btn-primary' : 'btn-ghost'}`}
+                            style={{ flex: 1, padding: '8px 24px', fontSize: '0.9rem' }}
+                            onClick={() => setActiveTab('packs')}
+                        >
+                            Mockup Bundles
+                        </button>
+                    </div>
                 </div>
 
-                {/* Packs section */}
-                {!packsLoading && packs.length > 0 && (
-                    <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                {/* Render content based on active tab */}
+                {activeTab === 'packs' && (
+                    <div className="fade-in">
+                        {packsLoading ? (
+                            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                <div className="loading-spinner" />
+                            </div>
+                        ) : packs.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📦</div>
+                                <h3 className="empty-state-title">No Bundles Yet</h3>
+                                <p className="empty-state-description">Check back later or ask an admin to create a bundle.</p>
+                            </div>
+                        ) : (
+                            <div className="gallery-grid">
+                                {packs.map(pack => (
+                                    <PackCard key={pack.id} pack={pack} mockups={mockups} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'individual' && (
+                    <div className="fade-in">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Packs</h2>
+                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Individual Mockups</h2>
                             <div style={{
                                 height: '1px', flex: 1,
                                 background: 'linear-gradient(to right, var(--color-border), transparent)'
                             }} />
                         </div>
-                        <div className="gallery-grid">
-                            {packs.map(pack => (
-                                <PackCard key={pack.id} pack={pack} mockups={mockups} />
-                            ))}
-                        </div>
+
+                        {/* Filter bar */}
+                        {availableTypes.length > 2 && (
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'flex-start',
+                                gap: 'var(--space-sm)',
+                                marginBottom: 'var(--space-md)',
+                                flexWrap: 'wrap'
+                            }}>
+                                {availableTypes.map(type => (
+                                    <button
+                                        key={type}
+                                        className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
+                                        style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+                                        onClick={() => setFilter(type)}
+                                    >
+                                        {TYPE_LABELS[type] || type}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <MockupGallery filter={filter} />
                     </div>
                 )}
-
-                {/* Individual mockups section */}
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Individual Mockups</h2>
-                        <div style={{
-                            height: '1px', flex: 1,
-                            background: 'linear-gradient(to right, var(--color-border), transparent)'
-                        }} />
-                    </div>
-
-                    {/* Filter bar */}
-                    {availableTypes.length > 2 && (
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'flex-start',
-                            gap: 'var(--space-sm)',
-                            marginBottom: 'var(--space-md)',
-                            flexWrap: 'wrap'
-                        }}>
-                            {availableTypes.map(type => (
-                                <button
-                                    key={type}
-                                    className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
-                                    style={{ fontSize: '0.85rem', padding: '6px 16px' }}
-                                    onClick={() => setFilter(type)}
-                                >
-                                    {TYPE_LABELS[type] || type}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    <MockupGallery filter={filter} />
-                </div>
             </div>
         </div>
     )
