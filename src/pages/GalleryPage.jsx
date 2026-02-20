@@ -93,7 +93,7 @@ function GalleryPage() {
     const navigate = useNavigate()
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
-    const [activeTab, setActiveTab] = useState('individual') // 'individual' | 'packs'
+    const [isIndividualCollapsed, setIsIndividualCollapsed] = useState(false)
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
 
@@ -182,34 +182,73 @@ function GalleryPage() {
                         </div>
                     )}
 
-                    {/* Tabs Selector */}
-                    <div style={{
-                        display: 'flex',
-                        background: 'var(--color-bg-secondary)',
-                        padding: '4px',
-                        borderRadius: 'var(--radius-md)',
-                        marginBottom: 'var(--space-xl)',
-                        gap: '4px'
-                    }}>
-                        <button
-                            className={`btn ${activeTab === 'individual' ? 'btn-primary' : 'btn-ghost'}`}
-                            style={{ flex: 1, padding: '8px 24px', fontSize: '0.9rem' }}
-                            onClick={() => setActiveTab('individual')}
-                        >
-                            Individual Mockups
-                        </button>
-                        <button
-                            className={`btn ${activeTab === 'packs' ? 'btn-primary' : 'btn-ghost'}`}
-                            style={{ flex: 1, padding: '8px 24px', fontSize: '0.9rem' }}
-                            onClick={() => setActiveTab('packs')}
-                        >
-                            Mockup Bundles
-                        </button>
-                    </div>
                 </div>
 
-                {/* Render content based on active tab */}
-                {activeTab === 'packs' && (
+                {/* Individual mockups section - Collapsible */}
+                <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                    <div
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)',
+                            cursor: 'pointer', userSelect: 'none'
+                        }}
+                        onClick={() => setIsIndividualCollapsed(!isIndividualCollapsed)}
+                    >
+                        <h2 style={{ margin: 0, fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            Individual Mockups
+                            <svg
+                                width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                style={{
+                                    transform: isIndividualCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.2s ease'
+                                }}
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </h2>
+                        <div style={{
+                            height: '1px', flex: 1,
+                            background: 'linear-gradient(to right, var(--color-border), transparent)'
+                        }} />
+                    </div>
+
+                    {!isIndividualCollapsed && (
+                        <div className="fade-in">
+                            {/* Filter bar */}
+                            {availableTypes.length > 2 && (
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-start',
+                                    gap: 'var(--space-sm)',
+                                    marginBottom: 'var(--space-md)',
+                                    flexWrap: 'wrap'
+                                }}>
+                                    {availableTypes.map(type => (
+                                        <button
+                                            key={type}
+                                            className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
+                                            style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+                                            onClick={() => setFilter(type)}
+                                        >
+                                            {TYPE_LABELS[type] || type}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <MockupGallery filter={filter} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Packs section */}
+                <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Mockup Bundles</h2>
+                        <div style={{
+                            height: '1px', flex: 1,
+                            background: 'linear-gradient(to right, var(--color-border), transparent)'
+                        }} />
+                    </div>
                     <div className="fade-in">
                         {packsLoading ? (
                             <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -229,43 +268,7 @@ function GalleryPage() {
                             </div>
                         )}
                     </div>
-                )}
-
-                {activeTab === 'individual' && (
-                    <div className="fade-in">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Individual Mockups</h2>
-                            <div style={{
-                                height: '1px', flex: 1,
-                                background: 'linear-gradient(to right, var(--color-border), transparent)'
-                            }} />
-                        </div>
-
-                        {/* Filter bar */}
-                        {availableTypes.length > 2 && (
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'flex-start',
-                                gap: 'var(--space-sm)',
-                                marginBottom: 'var(--space-md)',
-                                flexWrap: 'wrap'
-                            }}>
-                                {availableTypes.map(type => (
-                                    <button
-                                        key={type}
-                                        className={`btn ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
-                                        style={{ fontSize: '0.85rem', padding: '6px 16px' }}
-                                        onClick={() => setFilter(type)}
-                                    >
-                                        {TYPE_LABELS[type] || type}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        <MockupGallery filter={filter} />
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     )
