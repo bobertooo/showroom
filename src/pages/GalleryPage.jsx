@@ -190,7 +190,7 @@ function GalleryPage() {
                 {!packsLoading && packs.length > 0 && (
                     <div style={{ marginBottom: 'var(--space-2xl)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>🗂️ Packs</h2>
+                            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Packs</h2>
                             <div style={{
                                 height: '1px', flex: 1,
                                 background: 'linear-gradient(to right, var(--color-border), transparent)'
@@ -207,7 +207,7 @@ function GalleryPage() {
                 {/* Individual mockups section */}
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.3rem' }}>🖼️ Individual Mockups</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Individual Mockups</h2>
                         <div style={{
                             height: '1px', flex: 1,
                             background: 'linear-gradient(to right, var(--color-border), transparent)'

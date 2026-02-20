@@ -267,13 +267,8 @@ function PackPreviewPage() {
                         </p>
                     )}
 
-                    {/* Controls bar */}
-                    <div className="card" style={{
-                        padding: 'var(--space-md) var(--space-lg)',
-                        display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
-                        flexWrap: 'wrap'
-                    }}>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-2xl)' }}>
+                        <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
                                 {selected.size}/{packMockups.length} selected
                             </span>
