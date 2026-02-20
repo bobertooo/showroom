@@ -95,22 +95,12 @@ function GalleryPage() {
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
     const [isIndividualCollapsed, setIsIndividualCollapsed] = useState(false)
-    const [designAspectRatio, setDesignAspectRatio] = useState(null)
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
         setDesign(currentDesign)
-
-        if (currentDesign) {
-            const img = new Image()
-            img.onload = () => {
-                const aspect = img.width / img.height
-                setDesignAspectRatio(aspect)
-            }
-            img.src = currentDesign
-        }
     }, [])
 
     // Derive available types from the actual mockups
@@ -246,7 +236,7 @@ function GalleryPage() {
                                 </div>
                             )}
 
-                            <MockupGallery filter={filter} designAspectRatio={designAspectRatio} />
+                            <MockupGallery filter={filter} />
                         </div>
                     )}
                 </div>

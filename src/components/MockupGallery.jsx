@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useMockups } from '../hooks/useMockups'
-import { calculatePlacementAspect } from '../utils/imageUtils'
 import { useMemo } from 'react'
 
-function MockupGallery({ filter, designAspectRatio }) {
+function MockupGallery({ filter }) {
     const { mockups, loading } = useMockups()
     const navigate = useNavigate()
 
@@ -12,31 +11,11 @@ function MockupGallery({ filter, designAspectRatio }) {
             ? mockups.filter(m => m.type === filter)
             : [...mockups]
 
-        if (designAspectRatio) {
-            result.forEach(m => {
-                const aspect = calculatePlacementAspect(m)
-
-                // Using log comparison to treat ratios symmetrically (e.g. 1:2 and 2:1 are equally distant from 1:1)
-                m._logAspectDiff = Math.abs(Math.log(aspect / designAspectRatio))
-            })
-
-            // Sort closest match to the top
-            result.sort((a, b) => {
-                const diffA = a._logAspectDiff ?? 999
-                const diffB = b._logAspectDiff ?? 999
-                if (diffA !== diffB) return diffA - diffB
-                return new Date(b.createdAt) - new Date(a.createdAt) // newer first if equal match
-            })
-
-            // Mark the strongest matches as Recommended
-            result.forEach((m, idx) => {
-                // Recommend if it's one of the top 2 closest, OR if its aspect ratio is extremely close (< 10% diff)
-                m._isRecommended = idx < 2 || m._logAspectDiff < 0.1
-            })
-        }
+        // Default sort by newest first
+        result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
         return result
-    }, [mockups, filter, designAspectRatio])
+    }, [mockups, filter])
 
     if (loading) {
         return (
@@ -89,26 +68,6 @@ function MockupGallery({ filter, designAspectRatio }) {
                     style={{ position: 'relative' }}
                 >
                     <img src={mockup.image} alt={mockup.name || 'Mockup Template'} loading="lazy" decoding="async" />
-
-                    {mockup._isRecommended && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '12px',
-                            left: '12px',
-                            background: 'var(--color-bg-primary)',
-                            color: 'var(--color-accent-primary)',
-                            padding: '4px 10px',
-                            borderRadius: '999px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}>
-                            <span style={{ fontSize: '1rem' }}>⭐️</span> Recommended
-                        </div>
-                    )}
                 </div>
             ))}
         </div>
