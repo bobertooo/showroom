@@ -7,46 +7,9 @@ import { getCurrentDesign } from '../utils/storage'
 import { compositeImages } from '../utils/imageUtils'
 import MockupPreview from '../components/MockupPreview'
 
-// Export aspect ratios: null = original mockup dimensions
-const ASPECT_RATIOS = [
-    { label: 'Original', value: null },
-    { label: '1:1', value: 1 },
-    { label: '4:5', value: 4 / 5 },
-    { label: '3:4', value: 3 / 4 },
-    { label: '16:9', value: 16 / 9 },
-]
-
-function cropCanvasToRatio(srcCanvas, ratio) {
-    if (!ratio) return srcCanvas
-    const srcW = srcCanvas.width
-    const srcH = srcCanvas.height
-    const srcRatio = srcW / srcH
-
-    let cropW, cropH, offsetX, offsetY
-    if (srcRatio > ratio) {
-        // wider than target — crop left/right
-        cropH = srcH
-        cropW = Math.round(srcH * ratio)
-        offsetX = Math.round((srcW - cropW) / 2)
-        offsetY = 0
-    } else {
-        // taller than target — crop top/bottom
-        cropW = srcW
-        cropH = Math.round(srcW / ratio)
-        offsetX = 0
-        offsetY = Math.round((srcH - cropH) / 2)
-    }
-
-    const out = document.createElement('canvas')
-    out.width = cropW
-    out.height = cropH
-    out.getContext('2d').drawImage(srcCanvas, -offsetX, -offsetY)
-    return out
-}
-
 const defaultTransform = { scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fill' }
 
-function PackMockupItem({ mockup, designImage, aspectRatio, transform, selected, onToggle, onEdit, index }) {
+function PackMockupItem({ mockup, designImage, transform, selected, onToggle, onEdit, index }) {
     const canvasRef = useRef(null)
     const [status, setStatus] = useState('rendering') // 'rendering' | 'done' | 'error'
 
@@ -63,10 +26,9 @@ function PackMockupItem({ mockup, designImage, aspectRatio, transform, selected,
 
     const handleDownload = () => {
         if (!canvasRef.current || status !== 'done') return
-        const cropped = cropCanvasToRatio(canvasRef.current, aspectRatio)
         const link = document.createElement('a')
         link.download = `${mockup.name || `mockup-${index + 1}`}.jpg`
-        link.href = cropped.toDataURL('image/jpeg', 0.92)
+        link.href = canvasRef.current.toDataURL('image/jpeg', 0.92)
         link.click()
     }
 
@@ -162,7 +124,6 @@ function PackPreviewPage() {
     const [pack, setPack] = useState(null)
     const [packLoading, setPackLoading] = useState(true)
     const [design, setDesign] = useState(null)
-    const [aspectRatio, setAspectRatio] = useState(null) // null = original
     const [selected, setSelected] = useState(new Set())
     const [downloading, setDownloading] = useState(false)
     const [transforms, setTransforms] = useState({})
@@ -227,8 +188,7 @@ function PackPreviewPage() {
                 const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster'
                 const transform = transforms[mockup.id] || defaultTransform
                 await compositeImages(canvas, mockup.image, design, mockup.placement, transform, shouldClip, mockup.type)
-                const cropped = cropCanvasToRatio(canvas, aspectRatio)
-                const blob = await new Promise(resolve => cropped.toBlob(resolve, 'image/jpeg', 0.92))
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
                 zip.file(`${mockup.name || `mockup-${i + 1}`}.jpg`, blob)
             }
 
@@ -313,23 +273,6 @@ function PackPreviewPage() {
                         display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
                         flexWrap: 'wrap'
                     }}>
-                        {/* Aspect ratio selector */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
-                                Export Ratio:
-                            </span>
-                            {ASPECT_RATIOS.map(r => (
-                                <button
-                                    key={r.label}
-                                    className={`btn ${aspectRatio === r.value ? 'btn-primary' : 'btn-secondary'}`}
-                                    style={{ fontSize: '0.8rem', padding: '5px 12px' }}
-                                    onClick={() => setAspectRatio(r.value)}
-                                >
-                                    {r.label}
-                                </button>
-                            ))}
-                        </div>
-
                         <div style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
                                 {selected.size}/{packMockups.length} selected
@@ -370,7 +313,6 @@ function PackPreviewPage() {
                                 key={mockup.id}
                                 mockup={mockup}
                                 designImage={design}
-                                aspectRatio={aspectRatio}
                                 transform={transforms[mockup.id] || defaultTransform}
                                 selected={selected.has(mockup.id)}
                                 onToggle={() => toggleSelected(mockup.id)}
