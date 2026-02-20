@@ -4,6 +4,7 @@ import { useMockups } from '../hooks/useMockups'
 import { usePacks } from '../hooks/usePacks'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState, useMemo } from 'react'
+import { calculatePlacementAspect } from '../utils/imageUtils'
 
 const TYPE_LABELS = {
     'all': 'All',
@@ -94,12 +95,24 @@ function GalleryPage() {
     const [design, setDesign] = useState(null)
     const [filter, setFilter] = useState('all')
     const [isIndividualCollapsed, setIsIndividualCollapsed] = useState(false)
+    const [designAspectCategory, setDesignAspectCategory] = useState(null)
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
         setDesign(currentDesign)
+
+        if (currentDesign) {
+            const img = new Image()
+            img.onload = () => {
+                const aspect = img.width / img.height
+                if (aspect < 0.95) setDesignAspectCategory('portrait')
+                else if (aspect > 1.05) setDesignAspectCategory('landscape')
+                else setDesignAspectCategory('square')
+            }
+            img.src = currentDesign
+        }
     }, [])
 
     // Derive available types from the actual mockups
@@ -235,7 +248,7 @@ function GalleryPage() {
                                 </div>
                             )}
 
-                            <MockupGallery filter={filter} />
+                            <MockupGallery filter={filter} designAspectCategory={designAspectCategory} />
                         </div>
                     )}
                 </div>

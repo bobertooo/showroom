@@ -419,3 +419,28 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
     }
     return null;
 }
+
+export function calculatePlacementAspect(mockup) {
+    if (!mockup.mockupWidth || !mockup.mockupHeight) return 1 // fallback if missing
+
+    if (mockup.placement && mockup.placement.tl) {
+        // Perspective quad
+        const w1 = Math.sqrt(Math.pow(mockup.placement.tr.x - mockup.placement.tl.x, 2) + Math.pow(mockup.placement.tr.y - mockup.placement.tl.y, 2))
+        const w2 = Math.sqrt(Math.pow(mockup.placement.br.x - mockup.placement.bl.x, 2) + Math.pow(mockup.placement.br.y - mockup.placement.bl.y, 2))
+        const h1 = Math.sqrt(Math.pow(mockup.placement.bl.x - mockup.placement.tl.x, 2) + Math.pow(mockup.placement.bl.y - mockup.placement.tl.y, 2))
+        const h2 = Math.sqrt(Math.pow(mockup.placement.br.x - mockup.placement.tr.x, 2) + Math.pow(mockup.placement.br.y - mockup.placement.tr.y, 2))
+
+        // Percentages to absolute pixels (for aspect ratio, we can just use the percentages directly 
+        // IF the width/height of the mockup were the same. But they aren't, so we multiply by aspect ratio of the mockup)
+        const quadW = ((w1 + w2) / 2) * mockup.mockupWidth;
+        const quadH = ((h1 + h2) / 2) * mockup.mockupHeight;
+        return quadW / quadH;
+    } else if (mockup.placement && mockup.placement.width) {
+        // Flat legacy placement
+        const w = (mockup.placement.width / 100) * mockup.mockupWidth;
+        const h = (mockup.placement.height / 100) * mockup.mockupHeight;
+        return w / h;
+    }
+
+    return 1;
+}

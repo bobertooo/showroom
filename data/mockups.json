@@ -23,7 +23,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:03:18.995Z"
+    "createdAt": "2026-02-12T20:03:18.995Z",
+    "mockupWidth": 2048,
+    "mockupHeight": 2048
   },
   {
     "id": "mockup_1770929091184_hs2eo5282",
@@ -49,7 +51,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.184Z"
+    "createdAt": "2026-02-12T20:44:51.184Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1770929091250_bd9i7v87d",
@@ -75,7 +79,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.250Z"
+    "createdAt": "2026-02-12T20:44:51.250Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1770929091306_nd6xp9nz5",
@@ -101,7 +107,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.306Z"
+    "createdAt": "2026-02-12T20:44:51.306Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1770929091372_qlojbv636",
@@ -127,7 +135,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.372Z"
+    "createdAt": "2026-02-12T20:44:51.372Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1770929091442_5bsklksm1",
@@ -153,7 +163,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.442Z"
+    "createdAt": "2026-02-12T20:44:51.442Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1770929091541_5200zclpt",
@@ -179,7 +191,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-12T20:44:51.541Z"
+    "createdAt": "2026-02-12T20:44:51.541Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771261102520_impglr132",
@@ -193,7 +207,9 @@
       "height": 42.96589219450724
     },
     "edited": true,
-    "createdAt": "2026-02-16T16:58:22.533Z"
+    "createdAt": "2026-02-16T16:58:22.533Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771261956177_eo5fl8bci",
@@ -207,7 +223,9 @@
       "height": 40
     },
     "edited": true,
-    "createdAt": "2026-02-16T17:12:36.209Z"
+    "createdAt": "2026-02-16T17:12:36.209Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771278311496_b5l4errxu",
@@ -221,7 +239,9 @@
       "height": 40
     },
     "edited": false,
-    "createdAt": "2026-02-16T21:45:11.517Z"
+    "createdAt": "2026-02-16T21:45:11.517Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771278311616_rydewclhp",
@@ -235,7 +255,9 @@
       "height": 40
     },
     "edited": false,
-    "createdAt": "2026-02-16T21:45:11.624Z"
+    "createdAt": "2026-02-16T21:45:11.624Z",
+    "mockupWidth": 6240,
+    "mockupHeight": 4160
   },
   {
     "id": "mockup_1771278352525_u6tl9irlz",
@@ -261,7 +283,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-16T21:45:52.527Z"
+    "createdAt": "2026-02-16T21:45:52.527Z",
+    "mockupWidth": 4136,
+    "mockupHeight": 2763
   },
   {
     "id": "mockup_1771278778823_r5chg21l9",
@@ -275,7 +299,9 @@
       "height": 40
     },
     "edited": true,
-    "createdAt": "2026-02-16T21:52:58.843Z"
+    "createdAt": "2026-02-16T21:52:58.843Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771445931156_444s00t26",
@@ -301,7 +327,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-18T20:18:51.158Z"
+    "createdAt": "2026-02-18T20:18:51.158Z",
+    "mockupWidth": 1280,
+    "mockupHeight": 896
   },
   {
     "id": "mockup_1771445931201_ukzn46tet",
@@ -327,7 +355,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-18T20:18:51.203Z"
+    "createdAt": "2026-02-18T20:18:51.203Z",
+    "mockupWidth": 1280,
+    "mockupHeight": 896
   },
   {
     "id": "mockup_1771445931386_bejjm9w0e",
@@ -353,7 +383,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-18T20:18:51.400Z"
+    "createdAt": "2026-02-18T20:18:51.400Z",
+    "mockupWidth": 2560,
+    "mockupHeight": 1792
   },
   {
     "id": "mockup_1771446588062_pf5v60h9k",
@@ -379,7 +411,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-18T20:29:48.089Z"
+    "createdAt": "2026-02-18T20:29:48.089Z",
+    "mockupWidth": 4496,
+    "mockupHeight": 3840
   },
   {
     "id": "mockup_1771451159616_subjkyvy5",
@@ -405,7 +439,9 @@
       }
     },
     "edited": true,
-    "createdAt": "2026-02-18T21:45:59.630Z"
+    "createdAt": "2026-02-18T21:45:59.630Z",
+    "mockupWidth": 1750,
+    "mockupHeight": 1393
   },
   {
     "id": "mockup_gen17715396199361",
@@ -431,7 +467,9 @@
       }
     },
     "edited": false,
-    "createdAt": "2026-02-19T22:20:19.936Z"
+    "createdAt": "2026-02-19T22:20:19.936Z",
+    "mockupWidth": 2048,
+    "mockupHeight": 2048
   },
   {
     "id": "mockup_gen17715396199392",
@@ -457,7 +495,9 @@
       }
     },
     "edited": false,
-    "createdAt": "2026-02-19T22:20:19.939Z"
+    "createdAt": "2026-02-19T22:20:19.939Z",
+    "mockupWidth": 2048,
+    "mockupHeight": 2048
   },
   {
     "id": "mockup_gen17715396199393",
@@ -483,6 +523,8 @@
       }
     },
     "edited": false,
-    "createdAt": "2026-02-19T22:20:19.939Z"
+    "createdAt": "2026-02-19T22:20:19.939Z",
+    "mockupWidth": 2048,
+    "mockupHeight": 2048
   }
 ]

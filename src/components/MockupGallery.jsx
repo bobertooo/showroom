@@ -1,9 +1,38 @@
 import { useNavigate } from 'react-router-dom'
 import { useMockups } from '../hooks/useMockups'
+import { calculatePlacementAspect } from '../utils/imageUtils'
+import { useMemo } from 'react'
 
-function MockupGallery({ filter }) {
+function MockupGallery({ filter, designAspectCategory }) {
     const { mockups, loading } = useMockups()
     const navigate = useNavigate()
+
+    const filteredAndSorted = useMemo(() => {
+        let result = filter && filter !== 'all'
+            ? mockups.filter(m => m.type === filter)
+            : [...mockups]
+
+        if (designAspectCategory) {
+            result.forEach(m => {
+                const aspect = calculatePlacementAspect(m)
+                let cat = 'square'
+                if (aspect < 0.95) cat = 'portrait'
+                else if (aspect > 1.05) cat = 'landscape'
+
+                m._aspectCategory = cat
+                m._isRecommended = cat === designAspectCategory
+            })
+
+            // Sort recommended to top
+            result.sort((a, b) => {
+                if (a._isRecommended && !b._isRecommended) return -1
+                if (!a._isRecommended && b._isRecommended) return 1
+                return new Date(b.createdAt) - new Date(a.createdAt) // newer first
+            })
+        }
+
+        return result
+    }, [mockups, filter, designAspectCategory])
 
     if (loading) {
         return (
@@ -32,11 +61,9 @@ function MockupGallery({ filter }) {
         )
     }
 
-    const filtered = filter && filter !== 'all'
-        ? mockups.filter(m => m.type === filter)
-        : mockups
 
-    if (filtered.length === 0) {
+
+    if (filteredAndSorted.length === 0) {
         return (
             <div className="empty-state">
                 <div className="empty-state-icon">🔍</div>
@@ -50,13 +77,34 @@ function MockupGallery({ filter }) {
 
     return (
         <div className="gallery-grid fade-in">
-            {filtered.map((mockup) => (
+            {filteredAndSorted.map((mockup) => (
                 <div
                     key={mockup.id}
                     className="card card-clickable gallery-item"
                     onClick={() => navigate(`/preview/${mockup.id}`)}
+                    style={{ position: 'relative' }}
                 >
                     <img src={mockup.image} alt={mockup.name || 'Mockup Template'} loading="lazy" decoding="async" />
+
+                    {mockup._isRecommended && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '12px',
+                            left: '12px',
+                            background: 'var(--color-bg-primary)',
+                            color: 'var(--color-accent-primary)',
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>⭐️</span> Recommended
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

@@ -282,11 +282,11 @@ function generateMockupId() {
 
 async function saveImageFile(dataUrl, id) {
     if (!dataUrl || !dataUrl.startsWith('data:')) {
-        return dataUrl
+        return { url: dataUrl }; // Assume existing dimensions are kept
     }
 
     const match = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/)
-    if (!match) return dataUrl
+    if (!match) return { url: dataUrl };
 
     const safeId = sanitizeId(id)
     const base64Data = match[2]
@@ -302,12 +302,16 @@ async function saveImageFile(dataUrl, id) {
         throw new Error('Invalid file path')
     }
 
-    await sharp(inputBuffer)
+    const info = await sharp(inputBuffer)
         .resize({ width: 1600, withoutEnlargement: true })
         .webp({ quality: 85 })
         .toFile(filepath)
 
-    return `/api/images/${filename}`
+    return {
+        url: `/api/images/${filename}`,
+        width: info.width,
+        height: info.height
+    }
 }
 
 async function deleteImageFile(imageUrl) {
@@ -725,13 +729,15 @@ app.post('/api/mockups', requireAdmin, async (req, res) => {
     try {
         const mockup = req.body
         const id = sanitizeId(mockup.id || generateMockupId())
-        const imageUrl = await saveImageFile(mockup.image, id)
+        const imageResult = await saveImageFile(mockup.image, id)
 
         const newMockup = {
             id,
             name: mockup.name || 'Untitled Mockup',
             type: mockup.type || 'poster',
-            image: imageUrl,
+            image: imageResult.url,
+            mockupWidth: imageResult.width,
+            mockupHeight: imageResult.height,
             placement: mockup.placement,
             edited: mockup.edited ?? false,
             createdAt: mockup.createdAt || new Date().toISOString()
@@ -760,16 +766,23 @@ app.put('/api/mockups/:id', requireAdmin, async (req, res) => {
         }
 
         let imageUrl = mockups[index].image
+        let newWidth = mockups[index].mockupWidth
+        let newHeight = mockups[index].mockupHeight
+
         if (updates.image && updates.image.startsWith('data:')) {
             await deleteImageFile(mockups[index].image)
-            imageUrl = await saveImageFile(updates.image, id)
+            const result = await saveImageFile(updates.image, id)
+            imageUrl = result.url
+            newWidth = result.width
+            newHeight = result.height
         }
 
         mockups[index] = {
             ...mockups[index],
             ...updates,
             id,
-            image: imageUrl
+            image: imageUrl,
+            ...(newWidth && newHeight ? { mockupWidth: newWidth, mockupHeight: newHeight } : {})
         }
 
         await writeMockups(mockups)
