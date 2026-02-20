@@ -49,7 +49,7 @@ function DesignTransformOverlay({ mockup, designImage, transform, onTransformCha
         }
     }, [canvasRef, bounds])
 
-    const startDrag = useCallback((pageX, pageY, mode) => {
+    const startDrag = useCallback((pageX, pageY, mode, handleKey = null) => {
         if (!selected) {
             onSelect()
             return
