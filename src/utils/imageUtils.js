@@ -342,7 +342,17 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    let minX = canvas.width, maxX = 0, minY = canvas.height, maxY = 0;
+
+    let minSum = Infinity;
+    let maxSum = -Infinity;
+    let minDiff = Infinity;
+    let maxDiff = -Infinity;
+
+    let tl = { x: 0, y: 0 };
+    let br = { x: 0, y: 0 };
+    let tr = { x: 0, y: 0 };
+    let bl = { x: 0, y: 0 };
+
     const threshold = 40;
     let found = false;
 
@@ -366,10 +376,14 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
 
         if (diff < threshold) {
             found = true;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
+
+            const sum = x + y;
+            const diffXY = x - y;
+
+            if (sum < minSum) { minSum = sum; tl = { x, y }; }
+            if (sum > maxSum) { maxSum = sum; br = { x, y }; }
+            if (diffXY > maxDiff) { maxDiff = diffXY; tr = { x, y }; }
+            if (diffXY < minDiff) { minDiff = diffXY; bl = { x, y }; }
 
             if (x > 0 && !visited[y * w + (x - 1)]) { stack.push(x - 1); stack.push(y); }
             if (x < w - 1 && !visited[y * w + (x + 1)]) { stack.push(x + 1); stack.push(y); }
@@ -380,10 +394,10 @@ export async function detectPlacement(imageSrc, clickX, clickY, rect) {
 
     if (found) {
         return {
-            tl: { x: (minX / canvas.width) * 100, y: (minY / canvas.height) * 100 },
-            tr: { x: (maxX / canvas.width) * 100, y: (minY / canvas.height) * 100 },
-            br: { x: (maxX / canvas.width) * 100, y: (maxY / canvas.height) * 100 },
-            bl: { x: (minX / canvas.width) * 100, y: (maxY / canvas.height) * 100 }
+            tl: { x: (tl.x / canvas.width) * 100, y: (tl.y / canvas.height) * 100 },
+            tr: { x: (tr.x / canvas.width) * 100, y: (tr.y / canvas.height) * 100 },
+            br: { x: (br.x / canvas.width) * 100, y: (br.y / canvas.height) * 100 },
+            bl: { x: (bl.x / canvas.width) * 100, y: (bl.y / canvas.height) * 100 }
         };
     }
     return null;
