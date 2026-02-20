@@ -10,7 +10,7 @@ function LandingPage() {
                 <div className="container hero-content">
                     <div className="hero-text">
                         <h1 className="hero-title">
-                            Real mockups. Zero PSDs. <span className="text-gradient-purple">Export in seconds.</span>
+                            Realistic mockups in <span className="text-gradient-purple">minutes.</span>
                         </h1>
                         <p className="hero-subtitle">
                             Built for <strong>print-on-demand</strong> and <strong>Etsy sellers</strong>: upload your design, pick a template, and export <strong>listing images fast</strong>.
