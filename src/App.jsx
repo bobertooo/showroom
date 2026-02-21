@@ -5,6 +5,7 @@ import GalleryPage from './pages/GalleryPage'
 import PreviewPage from './pages/PreviewPage'
 import AdminPage from './pages/AdminPage'
 import PackPreviewPage from './pages/PackPreviewPage'
+import AccountPage from './pages/AccountPage'
 
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -27,6 +28,11 @@ function App() {
                 <Route path="/gallery" element={<GalleryPage />} />
                 <Route path="/preview/:id" element={<PreviewPage />} />
                 <Route path="/pack/:id" element={<PackPreviewPage />} />
+                <Route path="/account" element={
+                    <RequireAuth>
+                        <AccountPage />
+                    </RequireAuth>
+                } />
                 <Route path="/admin" element={
                     <RequireAuth adminOnly={true}>
                         <AdminPage />

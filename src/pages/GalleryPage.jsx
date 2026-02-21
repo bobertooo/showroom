@@ -103,12 +103,8 @@ function GalleryPage() {
     const { bundle, loading: bundleLoading } = useBundle()
 
     const displayPacks = useMemo(() => {
-        if (!user) return packs
-        return [
-            { id: 'my-bundle', name: 'My Bundle', description: 'Your saved mockup templates', mockupIds: bundle || [] },
-            ...packs
-        ]
-    }, [packs, user, bundle])
+        return packs
+    }, [packs])
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
