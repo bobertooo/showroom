@@ -67,7 +67,7 @@ app.use(helmet({ contentSecurityPolicy: false })) // CSP disabled for dev flexib
 
 app.use(cors({
     origin: isProduction
-        ? (process.env.ALLOWED_ORIGIN || true) // same-origin in prod; set ALLOWED_ORIGIN for custom domain
+        ? (process.env.ALLOWED_ORIGIN || false) // same-origin in prod; set ALLOWED_ORIGIN for custom domain
         : 'http://localhost:3000',
     credentials: true
 }))
