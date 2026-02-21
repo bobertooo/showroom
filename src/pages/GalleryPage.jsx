@@ -2,6 +2,8 @@ import MockupGallery from '../components/MockupGallery'
 import { getCurrentDesign } from '../utils/storage'
 import { useMockups } from '../hooks/useMockups'
 import { usePacks } from '../hooks/usePacks'
+import { useBundle } from '../hooks/useBundle'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState, useMemo } from 'react'
 import { calculatePlacementAspect } from '../utils/imageUtils'
@@ -97,6 +99,16 @@ function GalleryPage() {
     const [isIndividualCollapsed, setIsIndividualCollapsed] = useState(false)
     const { mockups } = useMockups()
     const { packs, loading: packsLoading } = usePacks()
+    const { user } = useAuth()
+    const { bundle, loading: bundleLoading } = useBundle()
+
+    const displayPacks = useMemo(() => {
+        if (!user) return packs
+        return [
+            { id: 'my-bundle', name: 'My Bundle', description: 'Your saved mockup templates', mockupIds: bundle || [] },
+            ...packs
+        ]
+    }, [packs, user, bundle])
 
     useEffect(() => {
         const currentDesign = getCurrentDesign()
@@ -255,7 +267,7 @@ function GalleryPage() {
                             <div style={{ textAlign: 'center', padding: '2rem' }}>
                                 <div className="loading-spinner" />
                             </div>
-                        ) : packs.length === 0 ? (
+                        ) : displayPacks.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-state-icon">📦</div>
                                 <h3 className="empty-state-title">No Bundles Yet</h3>
@@ -263,7 +275,7 @@ function GalleryPage() {
                             </div>
                         ) : (
                             <div className="gallery-grid">
-                                {packs.map(pack => (
+                                {displayPacks.map(pack => (
                                     <PackCard key={pack.id} pack={pack} mockups={mockups} />
                                 ))}
                             </div>

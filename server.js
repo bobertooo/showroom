@@ -438,6 +438,65 @@ app.post('/api/auth/logout', (req, res) => {
     })
 })
 
+// ===== User Bundles =====
+
+// GET /api/bundle — Get current user's bundle
+app.get('/api/bundle', requireAuth, async (req, res) => {
+    try {
+        const user = await findUserById(req.user.id)
+        if (!user) return res.status(404).json({ error: 'User not found' })
+        res.json(user.bundle || [])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// POST /api/bundle/add — Add mockup to bundle
+app.post('/api/bundle/add', requireAuth, async (req, res) => {
+    try {
+        const { mockupId } = req.body
+        if (!mockupId) return res.status(400).json({ error: 'Mockup ID required' })
+
+        const users = await readUsers()
+        const userIndex = users.findIndex(u => u.id === req.user.id)
+        if (userIndex === -1) return res.status(404).json({ error: 'User not found' })
+
+        const user = users[userIndex]
+        user.bundle = user.bundle || []
+
+        if (!user.bundle.includes(mockupId)) {
+            user.bundle.push(mockupId)
+            await writeUsers(users)
+        }
+
+        res.json(user.bundle)
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// POST /api/bundle/remove — Remove mockup from bundle
+app.post('/api/bundle/remove', requireAuth, async (req, res) => {
+    try {
+        const { mockupId } = req.body
+        if (!mockupId) return res.status(400).json({ error: 'Mockup ID required' })
+
+        const users = await readUsers()
+        const userIndex = users.findIndex(u => u.id === req.user.id)
+        if (userIndex === -1) return res.status(404).json({ error: 'User not found' })
+
+        const user = users[userIndex]
+        user.bundle = user.bundle || []
+
+        user.bundle = user.bundle.filter(id => id !== mockupId)
+        await writeUsers(users)
+
+        res.json(user.bundle)
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
 // ===== Google OAuth Routes =====
 
 const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)

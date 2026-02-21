@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import JSZip from 'jszip'
 import { getAllPacks } from '../utils/storage'
 import { useMockups } from '../hooks/useMockups'
+import { useBundle } from '../hooks/useBundle'
 import { getCurrentDesign } from '../utils/storage'
 import { compositeImages } from '../utils/imageUtils'
 import MockupPreview from '../components/MockupPreview'
@@ -121,6 +122,7 @@ function PackPreviewPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { mockups, loading: mockupsLoading } = useMockups()
+    const { bundle, loading: bundleLoading } = useBundle()
     const [pack, setPack] = useState(null)
     const [packLoading, setPackLoading] = useState(true)
     const [design, setDesign] = useState(null)
@@ -136,12 +138,23 @@ function PackPreviewPage() {
 
     // Load pack by id
     useEffect(() => {
+        if (id === 'my-bundle') {
+            setPack({
+                id: 'my-bundle',
+                name: 'My Bundle',
+                description: 'Your custom collection of mockup templates',
+                mockupIds: bundle
+            })
+            setPackLoading(bundleLoading)
+            return
+        }
+
         getAllPacks().then(packs => {
             const found = packs.find(p => p.id === id)
             setPack(found || null)
             setPackLoading(false)
         }).catch(() => setPackLoading(false))
-    }, [id])
+    }, [id, bundle, bundleLoading])
 
     // Derive the mockups that belong to this pack
     const packMockups = pack && !mockupsLoading
