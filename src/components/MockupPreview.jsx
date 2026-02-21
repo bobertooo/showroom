@@ -21,6 +21,8 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
     const renderTimerRef = useRef(null)
     const rafRef = useRef(null)
 
+    const currentDesignImage = designImage || "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23666' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 0h10v10H0zM10 10h10v10H10z'/%3E%3C/g%3E%3C/svg%3E";
+
     // Preload and cache images when mockup/design changes
     useEffect(() => {
         if (!mockup || !currentDesignImage) return
@@ -122,8 +124,6 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
             </div>
         )
     }
-
-    const currentDesignImage = designImage || "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23666' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 0h10v10H0zM10 10h10v10H10z'/%3E%3C/g%3E%3C/svg%3E";
 
     const isDefaultTransform = transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0 && transform.fillMode === 'fit'
 
