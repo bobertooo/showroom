@@ -23,15 +23,15 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
 
     // Preload and cache images when mockup/design changes
     useEffect(() => {
-        if (!mockup || !designImage) return
-        preloadImages(mockup.image, designImage)
+        if (!mockup || !currentDesignImage) return
+        preloadImages(mockup.image, currentDesignImage)
             .then(imgs => { cachedImagesRef.current = imgs })
             .catch(() => { })
-    }, [mockup, designImage])
+    }, [mockup, currentDesignImage])
 
     // Full-quality render — debounced via setTimeout to stay non-blocking
     useEffect(() => {
-        if (!mockup || !designImage) return
+        if (!mockup || !currentDesignImage) return
         if (isDraggingRef.current) return
 
         // Cancel any pending render
@@ -50,7 +50,7 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
                 const canvas = canvasRef.current
                 if (canvas) {
                     const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster';
-                    await compositeImages(canvas, mockup.image, designImage, mockup.placement, transform, shouldClip, mockup.type)
+                    await compositeImages(canvas, mockup.image, currentDesignImage, mockup.placement, transform, shouldClip, mockup.type)
                 }
                 hasLoadedOnce.current = true
                 setInitialLoading(false)
@@ -69,7 +69,7 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
                 cancelAnimationFrame(rafRef.current)
             }
         }
-    }, [mockup, designImage, transform])
+    }, [mockup, currentDesignImage, transform])
 
     // Handle live transform updates during drag & keyboard
     const handleTransformChange = useCallback((newTransform) => {
@@ -105,24 +105,6 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
         setTransform({ scale: 1, offsetX: 0, offsetY: 0, fillMode: 'fit' })
     }, [])
 
-    if (!designImage) {
-        return (
-            <div className="empty-state">
-                <div className="empty-state-icon">🎨</div>
-                <h3 className="empty-state-title">No Design Uploaded</h3>
-                <p className="empty-state-description">
-                    Please upload a design first before previewing mockups.
-                </p>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => navigate('/create')}
-                >
-                    Upload Design
-                </button>
-            </div>
-        )
-    }
-
     if (!mockup) {
         return (
             <div className="empty-state">
@@ -140,6 +122,8 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
             </div>
         )
     }
+
+    const currentDesignImage = designImage || "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23666' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 0h10v10H0zM10 10h10v10H10z'/%3E%3C/g%3E%3C/svg%3E";
 
     const isDefaultTransform = transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0 && transform.fillMode === 'fit'
 
@@ -200,7 +184,7 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
                         {!initialLoading && !error && (
                             <DesignTransformOverlay
                                 mockup={mockup}
-                                designImage={designImage}
+                                designImage={currentDesignImage}
                                 transform={transform}
                                 onTransformChange={handleTransformChange}
                                 canvasRef={canvasRef}
@@ -346,8 +330,9 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
                             <button
                                 className="btn btn-primary"
                                 onClick={handleDownload}
-                                disabled={initialLoading || error}
-                                style={{ width: '100%' }}
+                                disabled={initialLoading || error || !designImage}
+                                style={{ width: '100%', opacity: !designImage ? 0.5 : 1 }}
+                                title={!designImage ? "Upload a design first to download" : ""}
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -356,10 +341,19 @@ function MockupPreview({ mockup, designImage, initialTransform, onSave, onCancel
                                 </svg>
                                 Download
                             </button>
+                            {!designImage ? (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => navigate(`/create?redirect=/preview/${mockup.id}`)}
+                                    style={{ width: '100%', marginTop: 'var(--space-sm)' }}
+                                >
+                                    🎨 Upload Design
+                                </button>
+                            ) : null}
                             <button
                                 className="btn btn-secondary"
                                 onClick={() => navigate('/gallery')}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', marginTop: 'var(--space-sm)' }}
                             >
                                 ← Different Mockup
                             </button>

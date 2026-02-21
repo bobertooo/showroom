@@ -200,7 +200,7 @@ function PackPreviewPage() {
                 const canvas = document.createElement('canvas')
                 const shouldClip = mockup.type === 'wall-art' || mockup.type === 'poster'
                 const transform = transforms[mockup.id] || defaultTransform
-                await compositeImages(canvas, mockup.image, design, mockup.placement, transform, shouldClip, mockup.type)
+                await compositeImages(canvas, mockup.image, currentDesignImage, mockup.placement, transform, shouldClip, mockup.type)
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
                 zip.file(`${mockup.name || `mockup-${i + 1}`}.jpg`, blob)
             }
@@ -246,20 +246,7 @@ function PackPreviewPage() {
         )
     }
 
-    if (!design) {
-        return (
-            <div className="page fade-in">
-                <div className="container">
-                    <div className="empty-state">
-                        <div className="empty-state-icon">🎨</div>
-                        <h3 className="empty-state-title">No Design Uploaded</h3>
-                        <p className="empty-state-description">Upload your design first, then apply this pack.</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/create')}>Upload Design</button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const currentDesignImage = design || "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23666' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 0h10v10H0zM10 10h10v10H10z'/%3E%3C/g%3E%3C/svg%3E";
 
     return (
         <div className="page fade-in">
@@ -292,17 +279,27 @@ function PackPreviewPage() {
                             >
                                 {selected.size === packMockups.length ? 'Deselect All' : 'Select All'}
                             </button>
-                            <button
-                                className="btn btn-primary"
-                                style={{ fontSize: '0.85rem' }}
-                                onClick={handleDownloadSelected}
-                                disabled={selected.size === 0 || downloading}
-                            >
-                                {downloading
-                                    ? 'Preparing ZIP…'
-                                    : `↓ Download${selected.size > 0 ? ` (${selected.size})` : ''}`
-                                }
-                            </button>
+                            {!design ? (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => navigate(`/create?redirect=/pack/${pack.id}`)}
+                                    style={{ fontSize: '0.85rem' }}
+                                >
+                                    🎨 Upload Design
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-primary"
+                                    style={{ fontSize: '0.85rem' }}
+                                    onClick={handleDownloadSelected}
+                                    disabled={selected.size === 0 || downloading}
+                                >
+                                    {downloading
+                                        ? 'Preparing ZIP…'
+                                        : `↓ Download${selected.size > 0 ? ` (${selected.size})` : ''}`
+                                    }
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -320,7 +317,7 @@ function PackPreviewPage() {
                             <PackMockupItem
                                 key={mockup.id}
                                 mockup={mockup}
-                                designImage={design}
+                                designImage={currentDesignImage}
                                 transform={transforms[mockup.id] || defaultTransform}
                                 selected={selected.has(mockup.id)}
                                 onToggle={() => toggleSelected(mockup.id)}

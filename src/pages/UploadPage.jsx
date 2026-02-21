@@ -1,10 +1,13 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import DesignUploader from '../components/DesignUploader'
 import { saveCurrentDesign, getCurrentDesign } from '../utils/storage'
 import { useState, useEffect } from 'react'
 
 function UploadPage() {
     const navigate = useNavigate()
+    const location = useLocation()
+    const queryParams = new URLSearchParams(location.search)
+    const redirectTo = queryParams.get('redirect')
     const [hasDesign, setHasDesign] = useState(false)
 
     useEffect(() => {
@@ -16,6 +19,9 @@ function UploadPage() {
     const handleUpload = (designData) => {
         saveCurrentDesign(designData)
         setHasDesign(!!designData)
+        if (redirectTo) {
+            navigate(redirectTo)
+        }
     }
 
     return (
