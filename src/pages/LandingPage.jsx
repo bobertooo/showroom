@@ -41,6 +41,55 @@ function LandingPage() {
             {/* Moving Carousel */}
             <MockupCarousel />
 
+            {/* Timeline Section */}
+            <section className="timeline-section">
+                <div className="container timeline-container">
+                    <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '3rem' }}>How Showroom Works</h2>
+                    <div className="timeline">
+                        <div className="timeline-step">
+                            <div className="timeline-marker"></div>
+                            <div className="timeline-content">
+                                <h3 className="timeline-title">
+                                    <span className="timeline-step-num">Step 1</span>
+                                    Upload your design
+                                </h3>
+                                <p className="timeline-description">Drop in your artwork. Showroom supports high-resolution PNGs and JPGs for crystal-clear mockups.</p>
+                            </div>
+                        </div>
+                        <div className="timeline-step">
+                            <div className="timeline-marker"></div>
+                            <div className="timeline-content">
+                                <h3 className="timeline-title">
+                                    <span className="timeline-step-num">Step 2</span>
+                                    Choose a mockup template
+                                </h3>
+                                <p className="timeline-description">Browse our gallery of curated, photorealistic templates—from cozy living rooms to modern studios.</p>
+                            </div>
+                        </div>
+                        <div className="timeline-step">
+                            <div className="timeline-marker"></div>
+                            <div className="timeline-content">
+                                <h3 className="timeline-title">
+                                    <span className="timeline-step-num">Step 3</span>
+                                    Adjust your design
+                                </h3>
+                                <p className="timeline-description">Scale, position, and tweak. Our smart engine automatically handles perspective, lighting, and textures.</p>
+                            </div>
+                        </div>
+                        <div className="timeline-step">
+                            <div className="timeline-marker"></div>
+                            <div className="timeline-content">
+                                <h3 className="timeline-title">
+                                    <span className="timeline-step-num">Step 4</span>
+                                    Export
+                                </h3>
+                                <p className="timeline-description">Download your final image in seconds, ready to boost sales on Etsy, Shopify, or Instagram.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Features Section */}
             <section className="features">
                 <div className="container">

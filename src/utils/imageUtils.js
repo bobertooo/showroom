@@ -171,10 +171,16 @@ export async function preloadImages(mockupSrc, designSrc) {
     const key = `${mockupSrc}|${designSrc}`
     if (imageCache.has(key)) return imageCache.get(key)
 
-    const [mockupImg, designImg] = await Promise.all([
-        loadImage(mockupSrc),
-        loadImage(designSrc)
-    ])
+    const mockupImg = await loadImage(mockupSrc)
+    let designImg = null
+    if (designSrc) {
+        try {
+            designImg = await loadImage(designSrc)
+        } catch (e) {
+            console.warn("Failed to load design image, rendering mockup only:", e)
+        }
+    }
+
     const result = { mockupImg, designImg }
     imageCache.set(key, result)
     return result
@@ -192,6 +198,10 @@ export async function compositeImages(canvas, mockupSrc, designSrc, placement, t
 
     const ctx = canvas.getContext('2d')
     ctx.drawImage(mockupImg, 0, 0, canvas.width, canvas.height)
+
+    if (!designImg) {
+        return canvas
+    }
 
     const designAspect = designImg.width / designImg.height;
     const dstPoints = computeDesignPoints(placement, designAspect, canvas.width, canvas.height, transform);
@@ -225,6 +235,10 @@ export function quickComposite(canvas, mockupImg, designImg, placement, transfor
     const ctx = canvas.getContext('2d')
     ctx.clearRect(0, 0, w, h)
     ctx.drawImage(mockupImg, 0, 0, w, h)
+
+    if (!designImg) {
+        return canvas
+    }
 
     const designAspect = designImg.width / designImg.height
     const pts = computeDesignPoints(placement, designAspect, w, h, transform)
