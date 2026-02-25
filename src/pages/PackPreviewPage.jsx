@@ -194,6 +194,8 @@ function PackPreviewPage() {
             const zip = new JSZip()
             const selectedMockups = packMockups.filter(m => selected.has(m.id))
 
+            const usedNames = new Set()
+
             // We re-render each selected mockup to a fresh canvas for download
             for (let i = 0; i < selectedMockups.length; i++) {
                 const mockup = selectedMockups[i]
@@ -202,7 +204,17 @@ function PackPreviewPage() {
                 const transform = transforms[mockup.id] || defaultTransform
                 await compositeImages(canvas, mockup.image, currentDesignImage, mockup.placement, transform, shouldClip, mockup.type)
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
-                zip.file(`${mockup.name || `mockup-${i + 1}`}.jpg`, blob)
+
+                let baseName = mockup.name ? mockup.name.replace(/[\/\\:*?"<>|]/g, '-') : `mockup-${i + 1}`
+                let fileName = `${baseName}.jpg`
+                let counter = 1
+                while (usedNames.has(fileName)) {
+                    fileName = `${baseName}-${counter}.jpg`
+                    counter++
+                }
+                usedNames.add(fileName)
+
+                zip.file(fileName, blob)
             }
 
             const content = await zip.generateAsync({ type: 'blob' })
